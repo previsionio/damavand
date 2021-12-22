@@ -8,8 +8,6 @@
 #SBATCH --output=single_node_single_gpu.listing
 #SBATCH --time=00:05:00
 
-export LD_LIBRARY_PATH="/gpfswork/rech/rmq/ubt65ti/damavand_genci/damavand-gpu/build/"
-
 export RUST_BACKTRACE=1
 module purge
 

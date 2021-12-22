@@ -9,9 +9,6 @@
 #SBATCH --output=multiple_nodes_multiple_gpus.listing
 #SBATCH --time=10:00
 
-export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/gpfswork/rech/rmq/ubt65ti/damavand_genci/damavand-gpu/build"
-export RUST_BACKTRACE=1
-
 module purge
 
 module load openmpi/4.1.1
