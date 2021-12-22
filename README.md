@@ -18,19 +18,9 @@ rustup default nightly
 You will first need to install the dependencies of Damavand.
 
 ```
-git submodule init
-git submodule update
+git clone --recurse-submodules https://github.com/MichelNowak1/damavand.git
 
-cd arrayfire-rust/
-
-git submodule init
-git submodule update
-
-cd arrayfire/
-
-git submodule init
-git submodule update
-
+cd damavand/
 mkdir build/
 cd build/
 cmake ..
@@ -38,15 +28,15 @@ make
 make install
 ```
 
-## Buliding
+## Building
 Building in debug mode:
 ```
-cargo bulid
+cargo build
 ```
 
 Building in release mode:
 ```
-cargo bulid --release
+cargo build --release
 ```
 
 
