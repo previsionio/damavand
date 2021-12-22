@@ -1,0 +1,19 @@
+{
+  "name": "prevision-damavand",
+  "version": "0.0.1",
+  "description": "Quantum architectures simulator",
+  "main": "index.js",
+  "authors": {
+    "name": "Michel Nowak",
+    "email": "michel.nowak@prevision.io"
+  },
+  "repository": "/prevision-damavand",
+  "scripts": {
+    "dev": "vuepress dev src",
+    "build": "vuepress build src"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "vuepress": "^1.5.3"
+  }
+}

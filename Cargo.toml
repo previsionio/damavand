@@ -1,0 +1,27 @@
+[package]
+name = "damavand"
+version = "0.1.0"
+authors = ["Michel Nowak <michelnowak1@gmail.com>"]
+edition = "2018"
+build = "build.rs"
+
+[dependencies]
+rand="*"
+ndarray = {version="*", features=["rayon"]}
+rayon="*"
+num="*"
+pyo3={version="0.14.5", features=["extension-module"]}
+sysinfo="*"
+libc="*"
+embed-doc-image="*"
+mpi="*"
+
+[build-dependencies]
+cmake = "*"
+
+[lib]
+name = "damavand"
+crate-type = ["cdylib"]
+
+[features]
+gpu=[]

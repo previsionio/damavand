@@ -1,0 +1,60 @@
+
+body {
+    background-color: #19293C!important;
+    color: #FFFFFF!important;
+}
+
+body .mod{
+    color: #FD7C34!important;
+}
+a, h1, h2, h3, h4{
+    color: #FFFFFF!important;
+}
+
+.sidebar .sidebar-elems .a{
+    color: #000000!important;
+}
+.sidebar .location{
+    background-color: #19293C!important;
+    color: #FFFFFF!important;
+}
+
+.sidebar {
+    background-color: #19293C!important;
+    color: #FFFFFF!important;
+}
+
+.in-band {
+    background-color: #19293C!important;
+    color: #FFFFFF!important;
+}
+
+.example-wrap{
+    background-color: #19293C!important;
+    color: #FFFFFF!important;
+}
+
+.line-numbers {
+    background-color: #19293C!important;
+    color: #FFFFFF!important;
+}
+
+.rust{
+    background-color: #19293C!important;
+    color: #FFFFFF!important;
+}
+
+.kw{
+    color: #FD7C34!important;
+}
+
+.ident{
+    color: #FFFFFF!important;
+}
+
+.attribute {
+    color: #9FC9EA!important;
+}
+.attribute .ident{
+    color: #9FC9EA!important;
+}
