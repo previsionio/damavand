@@ -9,10 +9,10 @@ allows to take full advantage of **Nvidia GPUs** through the [CUDA framework](ht
 Finally, damavand is wrapped in **Python**.
 
 <p align="center">
-  <img src="/rust_logo.png" width="100em" />
-  <img src="/cpp_logo.png" width="100em" /> 
-  <img src="/cuda_logo.png" width="100em" /> 
-  <img src="/python_logo.png" width="100em" />
+  <img src="./rust_logo.png" width="100em" />
+  <img src="./cpp_logo.png" width="100em" /> 
+  <img src="./cuda_logo.png" width="100em" /> 
+  <img src="./python_logo.png" width="100em" />
 </p>
 
 So there are different ways to install damavand on your machine.
@@ -34,7 +34,7 @@ If you wish to install damavand easily, simply use:
 ```bash
 pip3 install damavand
 ```
-For further information on the usage of damavand, visit the next page of this documentation: [guide](/guide).
+For further information on the usage of damavand, visit the next page of this documentation: [guide](./guide).
 
 ## Requirements
 The system requirements are already enumerated in the Dockerfile. Make

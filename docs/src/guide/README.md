@@ -35,11 +35,11 @@ F = I x ... x I x G x I x ... x I
 
 <p align="center">
   <h4> Target qubit = 0 </h4>
-  <img src="/IIU.png" width="500em" /> 
+  <img src="./IIU.png" width="500em" /> 
   <h4> Target qubit = 1 </h4>
-  <img src="/IUI.png" width="500em" /> 
+  <img src="./IUI.png" width="500em" /> 
   <h4> Target qubit = 2 </h4>
-  <img src="/UII.png" width="500em" />
+  <img src="./UII.png" width="500em" />
 </p>
 
 where I is the 2x2 identity matrix and G represents the matrix of the gate of interest.

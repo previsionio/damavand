@@ -5,7 +5,7 @@ sidebarDepth: 2
 # High Performance Computing
 
 <p align="center">
-  <img src="/hpc_logo.png" width="300em" />
+  <img src="./hpc_logo.png" width="300em" />
 </p>
 
 **Damavand** is written to support computations on conventional laptops or HPC architectures.
@@ -22,7 +22,7 @@ rather on how to store the excessive amount of memory required to simulate a qua
 As shown in the illustration below, condier that the state vector can be splitted into a fixed number N. It is then
 straightforward to assign each chunk of the state vector to a different node.
 
-![Distributed GPU](/damavand_cpu_distributed.png)
+![Distributed GPU](./damavand_cpu_distributed.png)
 
 Each node is built with a certain number of processors, thus allowing to run multithreaded experiments. However,
 referring to the multithreading implementation presented in Guide, we can infer that some communications will be
@@ -42,7 +42,7 @@ the developments to **Nvidia** hardware.
 In the case of a supercomputer, the GPUs on the same node will often allow direct inter device communications through
 high thoughput NVLinks.
 
-![Distributed GPU](/damavand_gpu_distributed.png)
+![Distributed GPU](/.damavand_gpu_distributed.png)
 
 The illustration above shows that memory can be loaded on from the CPUs to the GPUs. We choose to treat inter-node
 communications with MPI ([OpenMPI](https://www.open-mpi.org/) or [MPICH](https://www.mpich.org/)).
@@ -70,5 +70,5 @@ srun python3 two_nodes.py
 ## Experimentations on Jean-Zay
 
 <p align="center">
-  <img src="/jean-zay.jpg" width="600em" />
+  <img src="./jean-zay.jpg" width="600em" />
 </p>

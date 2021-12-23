@@ -16,7 +16,7 @@ This page shows presents how damavand can be leveraged on supercomputers with al
 One of the main features of PennyLane is to integrate gradient descent schemes. 
 
 <p align="center">
-  <img src="/damavand_gradient_descent.png" width="400em" />
+  <img src="./damavand_gradient_descent.png" width="400em" />
 </p>
 
 
