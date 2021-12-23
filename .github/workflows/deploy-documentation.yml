@@ -31,9 +31,8 @@ jobs:
         working-directory: docs
         run: yarn install && yarn build --dest build/
 
-      - name: Deploy
-        uses: peaceiris/actions-gh-pages@v3
-        if: ${{ github.ref == 'refs/heads/main' }}
+      - name: Deploy 🚀
+        uses: JamesIves/github-pages-deploy-action@4.1.7
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: docs/build/
+          branch: gh-pages
+          folder: build
