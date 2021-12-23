@@ -11,7 +11,7 @@
   "scripts": {
     "dev": "vuepress dev src",
     "start": "",
-    "build": "vuepress build",
+    "build": "set NODE_OPTIONS=--openssl-legacy-provider & vuepress build",
     "deploy": "vuepress build"
   },
   "license": "MIT",
