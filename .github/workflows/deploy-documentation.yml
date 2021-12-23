@@ -27,12 +27,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-
 
-      - name: install dependencies
+      - name: vuepress-deploy
+        uses: jenkey2011/vuepress-deploy@master
         working-directory: docs
-        run: yarn install && yarn build --dest build/
-
-      - name: Deploy 🚀
-        uses: JamesIves/github-pages-deploy-action@4.1.7
-        with:
-          branch: gh-pages
-          folder: docs/build
+        env:
+          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+          TARGET_REPO: username/repo
+          TARGET_BRANCH: master
+          BUILD_SCRIPT: yarn && yarn build --dest build/
+          BUILD_DIR: build/
