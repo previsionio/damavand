@@ -29,10 +29,9 @@ jobs:
 
       - name: vuepress-deploy
         uses: jenkey2011/vuepress-deploy@master
-        working-directory: docs
         env:
           ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
           TARGET_REPO: username/repo
           TARGET_BRANCH: master
-          BUILD_SCRIPT: yarn && yarn build --dest build/
-          BUILD_DIR: build/
+          BUILD_SCRIPT: cd docs && yarn build --dest build/
+          BUILD_DIR: docs/build/
