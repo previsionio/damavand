@@ -3,6 +3,9 @@
   "version": "0.0.1",
   "description": "Quantum architectures simulator",
   "main": "index.js",
+  "engines": {
+    "node": "<=16.0.0"
+  },
   "authors": {
     "name": "Michel Nowak",
     "email": "michel.nowak@prevision.io"
