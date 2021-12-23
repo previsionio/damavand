@@ -27,13 +27,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-
 
-      - run: cd docs/
-      - run: yarn install
-      - run: yarn build --dest build/
+      - run: cd docs/ && yarn install
+      - run: cd docs/ && yarn build --dest build/
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         if: ${{ github.ref == 'refs/heads/main' }}
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./build
+          publish_dir: docs/build/
