@@ -10,6 +10,7 @@
   "repository": "/prevision-damavand",
   "scripts": {
     "dev": "vuepress dev src",
+    "start": "",
     "build": "vuepress build",
     "deploy": "vuepress build"
   },
