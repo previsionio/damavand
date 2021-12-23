@@ -1,0 +1,23 @@
+{
+  "name": "damavand",
+  "version": "0.1.0",
+  "description": "Quantum architectures simulator",
+  "main": "index.js",
+  "authors": {
+    "name": "Michel Nowak",
+    "email": "michelnowak1@gmail.com"
+  },
+  "repository": "/damavand",
+  "homepage": "git@github.com:MichelNowak1/damavand.git",
+  "scripts": {
+    "dev": "vuepress dev src",
+    "build": "vuepress build",
+    "predeploy": "yarn run build --dest build/",
+    "deploy": "gh-pages -d build"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "gh-pages": "^3.2.3",
+    "vuepress": "^1.9.1"
+  }
+}
