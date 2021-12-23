@@ -27,8 +27,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-
 
-      - run: cd docs/ && yarn install
-      - run: cd docs/ && yarn build --dest build/
+      - name: install dependencies
+        working-directory: docs
+        run: yarn install && yarn build --dest build/
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
