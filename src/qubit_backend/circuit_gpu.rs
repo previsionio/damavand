@@ -26,7 +26,7 @@ impl Circuit {
     ///
     /// # Attributes
     /// * `gate_index` index of the gate that needs to be applied.
-    fn apply_gpu_local(&mut self, gate_index: usize) {
+    pub fn apply_gpu_local(&mut self, gate_index: usize) {
         let gate = self.gates[gate_index].lock().unwrap();
         let target_qubit = gate.get_target_qubit();
 
