@@ -94,8 +94,9 @@ and continuous-variable based quantum architectures.
 
 The plugin that allows this can be found [here](https://github.com/MichelNowak1/pennylane-damavand).
 
-
-![damavand-gradient-descent](figures/damavand_gradient_descent.png)
+<p align="center">
+  <img src="figures/damavand_gradient_descent.png" width="400em" />
+</p>
 
 With this plugin, one can use pennylane with the `damavand.qubit` backend.
 
