@@ -1,7 +1,19 @@
 # Damavand
 
 Damavand is a code that simulates quantum circuits.
-It is intended to simulate variational classifiers.
+In order to learn more about damavand, refer to the [documentation](https://michelnowak1.github.io/damavand/).
+
+## Development status
+
+1. Core features:
+  * single node CPU ✔️
+  * single node GPU ✔️
+  * multiple nodes CPU ✔️
+  * single node multiple GPUs ✔️
+  * multiple nodes multiple GPUs ✔️
+2. Documentation 🛠️ (under construction) 
+3. README.md 🛠️ (under construction) 
+4. pypi 🛠️ (under construction) 
 
 ## Installation
 
