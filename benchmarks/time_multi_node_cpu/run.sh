@@ -9,12 +9,9 @@
 #SBATCH --output=sample_benchmark.listing
 #SBATCH --time=00:45:00
 
-export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/gpfswork/rech/rmq/ubt65ti/damavand_genci/damavand-gpu/build"
-
 module purge
 
 module load openmpi/4.1.1
 module load cuda/10.2
 
-export RAYON_NUM_THREADS=40
 srun python3 sample_benchmarks.py
