@@ -32,20 +32,10 @@ extern "C" {
 }
 
 impl Circuit {
-    /// Applies distributed kernel across all nodes
+    /// Applies distributed kernel across all nodes with GPUs
     ///
     /// # Attributes
     /// * `gate_index` index of the gate that needs to be applied.
-    ///
-    /// # Examples
-    /// ```
-    /// use damavand::qubit_backend::circuit::Circuit;
-    ///
-    /// let num_qubits = 3;
-    /// let circuit = Circuit::new(num_qubits);
-    ///
-    /// circuit.apply_distributed(0);
-    /// ```
     pub fn apply_distributed_gpu(&mut self, gate_index: usize) {
         let world = SystemCommunicator::world();
 

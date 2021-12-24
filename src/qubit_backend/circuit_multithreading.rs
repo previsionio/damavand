@@ -2,7 +2,10 @@ use crate::qubit_backend::circuit::Circuit;
 use num::complex::Complex;
 
 impl Circuit {
-    /// Applies multithreaded algorithm
+    /// Apply multithreading method on a run that contains a single node.
+    ///
+    /// #Arguments
+    /// `gate_index` the index of the gate to be applied on the quantum state.
     pub fn apply_multithreading_local(&mut self, gate_index: usize) {
         let gate = self.gates[gate_index].lock().unwrap();
 
@@ -50,7 +53,12 @@ impl Circuit {
             },
         );
     }
-    /// Applies multithreaded algorithm
+    /// Apply multithreading method on a run that contains a multiple nodes.
+    ///
+    /// #Arguments
+    /// `gate_index`: the index of the gate to be applied on the quantum state.
+    /// `current_node_rank`: the rank of the current node.
+    /// `partner_node_rank`: the rank of the partner node.
     pub fn apply_multithreading_distributed(
         &mut self,
         gate_index: usize,

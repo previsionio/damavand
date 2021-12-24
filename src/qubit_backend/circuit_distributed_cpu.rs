@@ -8,15 +8,6 @@ impl Circuit {
     /// # Attributes
     /// * `gate_index` index of the gate that needs to be applied.
     ///
-    /// # Examples
-    /// ```
-    /// use damavand::qubit_backend::circuit::Circuit;
-    ///
-    /// let num_qubits = 3;
-    /// let circuit = Circuit::new(num_qubits);
-    ///
-    /// circuit.apply_distributed_cpu(0);
-    /// ```
     pub fn apply_distributed_cpu(&mut self, gate_index: usize) {
         let world = SystemCommunicator::world();
 

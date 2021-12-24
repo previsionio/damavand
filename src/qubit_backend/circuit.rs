@@ -69,7 +69,7 @@ impl Circuit {
     /// # Arguments
     /// * `num_qubits` number of qubits on which the circuit will be run
     ///
-    /// # Example
+    /// # Examples
     /// ```
     /// use damavand::qubit_backend::circuit::Circuit;
     ///
@@ -225,6 +225,7 @@ impl Circuit {
         }
     }
 
+    /// Resets the quantum state to zero state
     pub fn reset(&mut self) {
         self.local_amplitudes =
             Array1::<Complex<f64>>::zeros((1 << self.num_qubits) / self.num_nodes);
@@ -271,20 +272,18 @@ impl Circuit {
     /// Forward method: implements a forward pass of a quantum state through a quantum circuit
     /// until measurment.
     ///
-    /// # Arguments
-    /// * `quantum_state` input quantum state
-    ///
-    /// # Example
+    /// # Examples
     /// ```
-    /// use damavand::qubit_backend::State;
     /// use damavand::qubit_backend::circuit::Circuit;
     ///
     /// // Create a circuit with 5 qubits
-    /// let num_qubits = 5;
+    /// let num_qubits = 1;
     /// let mut circuit = Circuit::new(num_qubits, Some("brute_force".to_string()));
     ///
-    /// // Initializes a state to 0
-    /// let state = State::new(num_qubits);
+    /// // Add a Hadamard gate on the first qubit
+    /// circuit.add_hadamard_gate(0);
+    ///
+    /// // Propagate the state through the circuit
     /// circuit.forward();
     /// ```
     pub fn forward(&mut self) {
@@ -313,6 +312,8 @@ impl Circuit {
         self.retrieve_amplitudes_on_host();
     }
 
+    /// Retrieves amplitudes on host when the computation was perfromed on GPUs.
+    /// until measurment.
     #[cfg(feature = "gpu")]
     pub fn retrieve_amplitudes_on_host(&mut self) {
         match self.apply_method {
@@ -347,21 +348,27 @@ impl Circuit {
     /// # Returns
     /// `Array<f64>`: an array of probabilities associated to each quantum amplitude
     ///
-    /// # Arguments
-    /// * `initial_quantum_state` an initial quantum gate
-    ///
-    /// # Example
+    /// # Examples
     /// ```
     /// use damavand::qubit_backend::circuit::Circuit;
-    /// use damavand::qubit_backend::gates;
-    /// use damavand::qubit_backend::State;
     ///
     /// // Create a circuit with 5 qubits.
     /// let num_qubits = 5;
     /// let mut circuit = Circuit::new(num_qubits, Some("brute_force".to_string()));
     /// let quantum_state = State::new(num_qubits);
     ///
-    /// circuit.sample(&quantum_state);
+    /// // Add a Hadamard gate on the first qubit
+    /// circuit.add_hadamard_gate(0);
+    ///
+    /// // Propagate the state through the circuit
+    /// circuit.forward();
+    ///
+    /// // Measures last updates quantum state.
+    /// circuit.measure();
+    ///
+    /// // sample the circuit num_samples times
+    /// let num_samples = 1024
+    /// circuit.sample(Some(num_sampes));
     /// ```
     pub fn sample(&mut self, num_samples: Option<usize>) -> Vec<Vec<f64>> {
         let num_samples = if num_samples.is_some() {
@@ -380,6 +387,14 @@ impl Circuit {
         }
     }
 
+    /// Sample the circuit when there is only one node.
+    ///
+    /// # Arguments:
+    /// `num_samples`: number of samples to be drawn
+    /// `node_probabilities`: probability distribution from which to draw the samples
+    ///
+    /// # Returns
+    /// `Array<f64>`: an array of probabilities associated to each quantum amplitude
     pub fn sample_local(
         &mut self,
         num_samples: usize,
@@ -399,6 +414,13 @@ impl Circuit {
         samples
     }
 
+    /// Extract the value of observables from a sample.
+    ///
+    /// # Arguments
+    /// `sample`: the sample drawn from a probability distribution.
+    ///
+    /// # Returns
+    /// `Vec<f64>`: a vector containing the values of the observables
     pub fn extract_observable_from_sample(&self, sample: usize) -> Vec<f64> {
         let mut samples = vec![];
         for observable_index in self.observables.clone() {
@@ -454,25 +476,18 @@ impl Circuit {
     /// Measures a quantum state. Usually run at the end of the forward pass so as to collapse the
     /// output of a quantum circuit.
     ///
-    /// # Arguments
-    /// * `state` a quantum gate
-    ///
-    /// # Example
+    /// # Examples
     /// ```
-    /// use damavand::qubit_backend::gates;
-    /// use damavand::qubit_backend::State;
     /// use damavand::qubit_backend::circuit::Circuit;
     ///
     /// // Create a circuit with 5 qubits.
     /// let num_qubits = 5;
     /// let mut circuit = Circuit::new(num_qubits, Some("brute_force".to_string()));
     ///
-    /// let quantum_state = State::new(num_qubits);
-    ///
     /// circuit.add_hadamard_gate(0);
     /// circuit.forward();
     ///
-    /// // Measures the last quantum state.
+    /// // Measures last updates quantum state.
     /// circuit.measure();
     /// ```
     pub fn measure(&self) -> Vec<f64> {
@@ -496,6 +511,11 @@ impl Circuit {
         probabilities
     }
 
+    /// Retrieve a vector with the real part of the amplitudes of the state.
+    /// Usually run at the end of a run.
+    ///
+    /// # Returns:
+    /// `Vec<f64>` a vector containint the real parts of the amplitudes.
     pub fn get_real_part_state(&self) -> Vec<f64> {
         self.local_amplitudes.iter().map(|a| a.re).collect()
     }
@@ -602,6 +622,15 @@ impl Circuit {
     }
 }
 impl Circuit {
+    /// Computes the partner rank of a given amplitude rank.
+    ///
+    /// # Arguments
+    /// `current_node_rank`: the rank of the amplitude for which we want the partner.
+    /// `num_amplitudes_per_node`: number of amplitudes per node.
+    /// `amplitude_gap`: the amplitude gab between the two amplitudes
+    ///
+    /// # Returns:
+    /// `usize` the partner rank
     pub fn compute_partner_rank(
         current_node_rank: usize,
         num_amplitudes_per_node: usize,

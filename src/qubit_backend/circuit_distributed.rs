@@ -16,23 +16,10 @@ extern "C" {
 }
 
 impl Circuit {
-    /// Exchanges amplitudes between two partner nodes
+    /// Exchanges amplitudes between current and partner node
     ///
     /// # Attributes
-    /// * `current_node_rank` rank of node treated by current process
     /// * `partner_node_rank` rank of node treated by partner process
-    /// * `num_amplitudes_per_node` number of amplitudes stored in each node
-    ///
-    /// # Examples
-    /// ```
-    /// use damavand::qubit_backend::circuit::Circuit;
-    ///
-    /// let num_qubits = 3;
-    /// let circuit = Circuit::new(num_qubits);
-    /// let num_amplitudes_per_node = 2;
-    ///
-    /// circuit.exchange_amplitudes_between_nodes(0, 1);
-    /// ```
     pub fn exchange_amplitudes_between_nodes(&mut self, partner_node_rank: usize) {
         let world = SystemCommunicator::world();
 
@@ -65,18 +52,6 @@ impl Circuit {
     /// # Attributes
     /// * `current_node_rank` rank of node treated by current process
     /// * `partner_node_rank` rank of node treated by partner process
-    /// * `num_amplitudes_per_node` number of amplitudes stored in each node
-    ///
-    /// # Examples
-    /// ```
-    /// use damavand::qubit_backend::circuit::Circuit;
-    ///
-    /// let num_qubits = 3;
-    /// let circuit = Circuit::new(num_qubits);
-    /// let num_amplitudes_per_node = 2;
-    ///
-    /// circuit.exchange_amplitudes_between_gpus(0, 1, num_amplitudes_per_node);
-    /// ```
     #[cfg(feature = "gpu")]
     pub fn exchange_amplitudes_between_gpus(
         &mut self,
@@ -88,7 +63,7 @@ impl Circuit {
         }
     }
 
-    ///
+    /// 
     pub fn sample_distributed(
         &mut self,
         num_samples: usize,

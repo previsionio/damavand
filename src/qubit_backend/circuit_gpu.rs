@@ -26,17 +26,7 @@ impl Circuit {
     ///
     /// # Attributes
     /// * `gate_index` index of the gate that needs to be applied.
-    ///
-    /// # Examples
-    /// ```
-    /// use damavand::qubit_backend::circuit::Circuit;
-    ///
-    /// let num_qubits = 3;
-    /// let circuit = Circuit::new(num_qubits);
-    ///
-    /// circuit.apply_smart_gpu(0);
-    /// ```
-    pub fn apply_gpu_local(&mut self, gate_index: usize) {
+    fn apply_gpu_local(&mut self, gate_index: usize) {
         let gate = self.gates[gate_index].lock().unwrap();
         let target_qubit = gate.get_target_qubit();
 
@@ -65,21 +55,11 @@ impl Circuit {
             )
         };
     }
-    /// Applies local kernel on GPU
+    /// Applies local kernel on GPU for multiple GPUs runs.
     ///
     /// # Attributes
     /// * `gate_index` index of the gate that needs to be applied.
-    ///
-    /// # Examples
-    /// ```
-    /// use damavand::qubit_backend::circuit::Circuit;
-    ///
-    /// let num_qubits = 3;
-    /// let circuit = Circuit::new(num_qubits);
-    ///
-    /// circuit.apply_smart_gpu(0);
-    /// ```
-    pub fn apply_gpu_distributed(&mut self, gate_index: usize) {
+   pub fn apply_gpu_distributed(&mut self, gate_index: usize) {
         let gate = self.gates[gate_index].lock().unwrap();
         let target_qubit = gate.get_target_qubit();
 

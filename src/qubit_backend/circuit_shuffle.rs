@@ -2,6 +2,10 @@ use crate::qubit_backend::circuit::Circuit;
 use crate::utils;
 
 impl Circuit {
+    /// Apply Shuffle method
+    ///
+    /// #Arguments
+    /// `gate_index` the index of the gate to be applied on the quantum state.
     pub fn apply_shuffle(&mut self, gate_index: usize) {
         let gate = self.gates[gate_index].lock().unwrap();
         if gate.get_control_qubit().is_some() {
