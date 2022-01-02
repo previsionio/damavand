@@ -73,6 +73,32 @@ pip3 install damavand
 On the other hand, if you do not have a CUDA-capable GPU on your machine, install as explained in
 `Dockerfiles/CPU/Dockerfile`.
 
+## Install via Dockerfile
+
+If you wish to deploy damavand on a machine on which you do not want to install from source, you can use Dockerfiles, as
+described here.
+
+First, build the image in the root directory in CPU mode:
+
+```bash
+docker build -t damavand-cpu-image -f Dockerfiles/CPU/Dockerfile
+```
+
+or in GPU mode:
+
+```bash
+docker build -t damavand-gpu-image -f Dockerfiles/GPU/Dockerfile
+```
+
+Then, run the image with a bash prompt.
+```bash
+docker run -it damavand-gpu-image bash
+```
+
+This method simplifies the installation process, but does not provide with enough flexibility to run on multiple nodes,
+as HPC architectures.
+
+
 ## Contributing to damavand development
 Another mode of installation is by setting up the environement for development.
 
@@ -113,45 +139,20 @@ Then, execute:
 python3 setup.py install
 ```
 
-## Install via Dockerfile
-
-If you wish to deploy damavand on a machine on which you do not want to install from source, you can use Dockerfiles, as
-described here.
-
-First, build the image in the root directory in CPU mode:
-
-```bash
-docker build -t damavand-cpu-image -f Dockerfiles/CPU/Dockerfile
-```
-
-or in GPU mode:
-
-```bash
-docker build -t damavand-gpu-image -f Dockerfiles/GPU/Dockerfile
-```
-
-Then, run the image with a bash prompt.
-```bash
-docker run -it damavand-gpu-image bash
-```
-
-This method simplifies the installation process, but does not provide with enough flexibility to run on multiple nodes,
-as HPC architectures.
-
 ## Install on supercomputers
 
 In order to compile damavand locally, you will need to load some modules first.
 
 ```bash
-module load rust/1.57.0
-module load openmpi/3.1.4
-module load automake/1.16.1
-module load libtool/2.4.6
-module load cmake/3.21.3
-module load cuda/10.2
-module load autoconf/2.69
-module load llvm/8.0.0
-module load gcc/7.3.0
+module load rust
+module load openmpi
+module load automake
+module load libtool
+module load cmake
+module load cuda
+module load autoconf
+module load llvm
+module load gcc
 ```
 
 Once the modules are loaded, you will be able to compile damavand, just as described in the previous sections.
