@@ -15,49 +15,37 @@ Finally, damavand is wrapped in **Python**.
   <img src="/damavand/python_logo.png" width="100em" />
 </p>
 
-So there are different ways to install damavand on your machine.
-
-1. install only for Python usage
-2. install from sources
-2. install from Dockerfile
-
-This page will guide you through the 3 different possibilities.
-
-
-## Easy-Install
-
-Damavand is linked to pypi. Once a new version is tagged on github, pypi automatically updates the version to the
-latest one.
-
-If you wish to install damavand easily, simply use:
-
-```bash
-pip3 install damavand
-```
-For further information on the usage of damavand, visit the next page of this documentation: [guide](/guide).
+1. install requirements
+2. install from pypi
+3. install from Dockerfile
+4. setup development environment
+5. install on supercomputers
 
 ## Requirements
-The system requirements are already enumerated in the Dockerfile. Make
-sure that they are installed on you machine. On Ubuntu, this would look like this:
+The system requirements are already enumerated in `Dockerfiles/CPU/Dockerfile` and in `Dockerfiles/GPU/Dockerfile`. Make
+sure that they are installed on you machine **before** installing from pypi. On Ubuntu, this would look like this:
 
 ### general
+Make sure that python is installed along with its utility pip.
 ```bash
 sudo apt install python3-pip
 ```
 
 ### compilation for damavand-gpu
+Install compilators for the GPU library
 ```bash
 sudo apt install g++
 sudo apt install cmake
 ```
 
-### install rust
+### damavand rust
+Install Rust compilers.
 ```bash
 sudo apt install curl
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
-### damavand rust
+Install system dependencies.
 ```bash
 sudo apt install autoconf
 sudo apt install mpich
@@ -72,9 +60,23 @@ pip3 install setuptools-rust
 pip3 install matplotlib
 pip3 install pennylane
 ```
-## Install from sources
+## pypi fetch
 
-### Cloning the repository
+Damavand is linked to pypi. Once a new version is tagged on github, pypi automatically updates the version to the
+latest one.
+
+If you wish to install damavand easily and with the GPU, simply use:
+
+```bash
+pip3 install damavand
+```
+On the other hand, if you do not have a CUDA-capable GPU on your machine, install as explained in
+`Dockerfiles/CPU/Dockerfile`.
+
+## Contributing to damavand development
+Another mode of installation is by setting up the environement for development.
+
+### Clone the repository
 If you wish to develope further functionalities or correct bugs in damavand, you must first clone the git repository:
 
 ```bash
@@ -93,7 +95,7 @@ cargo build
 ```
 
 Once you are confident that the code is functional, you can build damavand in release mode, which will run faster than
-in debug mode.
+in debug mode: compile in release mode.
 
 ```bash
 cargo build --release
@@ -108,31 +110,60 @@ pip3 install -r requirements-dev.txt
 
 Then, execute:
 ```bash
-python3 setup.py develop
-```
-in debug mode, or 
-
-```bash
 python3 setup.py install
 ```
-in release mode.
 
 ## Install via Dockerfile
 
 If you wish to deploy damavand on a machine on which you do not want to install from source, you can use Dockerfiles, as
 described here.
 
-First, build the image in the root directory:
+First, build the image in the root directory in CPU mode:
+
 ```bash
-docker build -t damavand-image .
+docker build -t damavand-cpu-image -f Dockerfiles/CPU/Dockerfile
+```
+
+or in GPU mode:
+
+```bash
+docker build -t damavand-gpu-image -f Dockerfiles/GPU/Dockerfile
 ```
 
 Then, run the image with a bash prompt.
 ```bash
-docker run -it damavand-image bash
+docker run -it damavand-gpu-image bash
 ```
 
 This method simplifies the installation process, but does not provide with enough flexibility to run on multiple nodes,
 as HPC architectures.
 
+## Install on supercomputers
 
+In order to compile damavand locally, you will need to load some modules first.
+
+```bash
+module load rust/1.57.0
+module load openmpi/3.1.4
+module load automake/1.16.1
+module load libtool/2.4.6
+module load cmake/3.21.3
+module load cuda/10.2
+module load autoconf/2.69
+module load llvm/8.0.0
+module load gcc/7.3.0
+```
+
+Once the modules are loaded, you will be able to compile damavand, just as described in the previous sections.
+However, you might lack an internet connection on the supercomputer, so the rust dependencies will not be downloaded.
+
+In order to install damavand from sources, there is a workaround.
+
+On your local computer, run:
+
+```bash
+cd damavand/
+CARGO_HOME $PWD/cargo cargo fetch
+cd ..
+scp -R damavand/ <user>@<supercomputer>:<path_to_working_directory>
+```

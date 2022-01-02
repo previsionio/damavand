@@ -37,10 +37,17 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 
 # CUDA samples
 RUN cd /repos && git clone https://github.com/NVIDIA/cuda-samples.git
-RUN export CUDA_SAMPLES_COMMON_INCLUDE_DIR="~/repos/cuda-samples/Common/"
+ENV CUDA_SAMPLES_COMMON_INCLUDE_DIR="/repos/cuda-samples/Common/"
 
 # damavand python
 RUN pip install -r requirements-dev.txt
 RUN pip install -r requirements-examples.txt
 
+# damavand GPU
 RUN pip install damavand
+RUN mkdir /repos/damavand/damavand-gpu/build
+RUN cd /repos/damavand/damavand-gpu/build && \
+    cmake .. && \
+    make
+
+ENV LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/repos/damavand/damavand-gpu/build"

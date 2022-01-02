@@ -22,4 +22,4 @@ RUN apt install -y texinfo
 # damavand python
 RUN pip install -r requirements-dev.txt
 RUN pip install -r requirements-examples.txt
-RUN pip install damavand
+RUN python3 setup-cpu.py install
