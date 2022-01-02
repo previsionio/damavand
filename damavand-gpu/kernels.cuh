@@ -1,6 +1,5 @@
-
-#ifndef kernels_cuh
-#define kernels_cuh
+#ifndef KERNELS_CUH
+#define KERNELS_CUH
 
 #include <iostream>
 #include <ctime>
@@ -11,12 +10,17 @@
 #include <cuComplex.h>
 #include <math.h>
 
-#ifdef HAS_CUDA_PROFILING_CONTROL
-#include <cuda_profiler_api.h>
-#endif
 
-__global__ void measure_amplitudes_on_device(
+__global__ void measure_amplitudes_on_device_global(
     int num_amplitudes_per_gpu,
+    int first_amplitude_index,
+    double *prob,
+    double *real_parts,
+    double *imaginary_aprts);
+
+__global__ void measure_amplitudes_on_device_shared(
+    int num_amplitudes_per_gpu,
+    int first_amplitude_index,
     double *prob,
     double *real_parts,
     double *imaginary_aprts);

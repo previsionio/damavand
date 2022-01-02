@@ -10,6 +10,7 @@
 
 #include "quantum_amplitudes.cuh"
 #include "kernels.cuh"
+#include "utils.cuh"
 
 // contains the amplitudes for each gpu in a single node.
 // we thus avoid MPI communication between GPUs in the same node.
@@ -45,9 +46,70 @@ extern "C" int peer_access_allowed(int source_gpu_id, int target_gpu_id)
     return can_access_peer;
 }
 
+extern "C" void print_timers()
+{
+#ifdef HAS_PROFILER
+    float init_average_time = 0.;
+    float apply_average_time = 0.;
+    float measure_average_time = 0.;
+    float copy_device_to_host_time = 0.;
+
+    for(int gpu_id = 0; gpu_id < num_gpus_per_node_used; gpu_id++)
+    {
+        auto parameters = get_launching_parameters(
+            local_amplitudes[gpu_id].occupancy_strategy,
+            num_gpus_per_node_used,
+            init_zero_state_on_first_gpu);
+
+        auto init_potential_occupancy = get_occupancy(
+            num_gpus_per_node_used,
+            init_zero_state_on_first_gpu,
+            parameters.block_size);
+
+        parameters = get_launching_parameters(
+            local_amplitudes[gpu_id].occupancy_strategy,
+            num_gpus_per_node_used,
+            apply_one_qubit_gate_kernel_local);
+
+        auto apply_potential_occupancy = get_occupancy(
+            num_gpus_per_node_used,
+            apply_one_qubit_gate_kernel_local,
+            parameters.block_size);
+
+        parameters = get_launching_parameters(
+            local_amplitudes[gpu_id].occupancy_strategy,
+            num_gpus_per_node_used,
+            measure_amplitudes_on_device_shared);
+
+        auto measure_potential_occupancy = get_occupancy(
+            num_gpus_per_node_used,
+            measure_amplitudes_on_device_shared,
+            parameters.block_size);
+
+        init_average_time += get_init_kernel_elapsed_time();
+        apply_average_time += get_apply_kernel_elapsed_time();
+        measure_average_time += get_measure_kernel_elapsed_time();
+        copy_device_to_host_time += get_copy_device_to_host_elapsed_time();
+
+        // printf("initoccupancy %f\n", init_potential_occupancy);
+        // printf("apply occupancy %f\n", apply_potential_occupancy);
+        // printf("measure occupancy %f\n", measure_potential_occupancy);
+    }
+
+    printf("init %f\n", init_average_time / num_gpus_per_node_used);
+    printf("apply %f\n", apply_average_time / num_gpus_per_node_used);
+    printf("measure %f\n", measure_average_time / num_gpus_per_node_used);
+    printf("copy_device_to_host %f\n", copy_device_to_host_time/ num_gpus_per_node_used);
+#endif
+}
+
 extern "C" void exchange_amplitudes_between_gpus(int current_gpu_rank, int partner_gpu_rank,
         int num_amplitudes_per_gpu)
 {
+    #ifdef HAS_PROFILER
+        sdkStartTimer(&copy_device_to_device_timer);
+    #endif
+
     checkCudaErrors(cudaMemcpy(
                         partner_amplitudes[current_gpu_rank].real_parts,
                         local_amplitudes[partner_gpu_rank].real_parts,
@@ -71,6 +133,9 @@ extern "C" void exchange_amplitudes_between_gpus(int current_gpu_rank, int partn
                         local_amplitudes[current_gpu_rank].imaginary_parts,
                         sizeof(double) * num_amplitudes_per_gpu,
                         cudaMemcpyDeviceToDevice));
+    #ifdef HAS_PROFILER
+        sdkStopTimer(&copy_device_to_device_timer);
+    #endif
 }
 
 extern "C" void init_quantum_state(
@@ -78,6 +143,9 @@ extern "C" void init_quantum_state(
     int num_gpus_per_node,
     bool is_first_node)
 {
+    #ifdef HAS_PROFILER
+        init_timers();
+    #endif
     num_gpus_per_node_used = num_gpus_per_node;
 
     local_amplitudes.clear();
@@ -127,7 +195,61 @@ extern "C" void init_quantum_state(
     }
 }
 
-extern "C" void measure_on_gpu(int num_amplitudes_per_gpu, double *probabilities)
+extern "C" void sequential_measure_on_gpu(int num_amplitudes_per_gpu, double *probabilities)
+{
+
+    #pragma omp parallel for num_threads(num_gpus_per_node_used)
+    for(int gpu_id = 0; gpu_id < num_gpus_per_node_used; gpu_id++)
+    {
+        checkCudaErrors(cudaSetDevice(gpu_id));
+        cudaStream_t stream;
+        cudaStreamCreate(&stream);
+
+        // allocate memory on device for results
+        double *device_probabilities;
+        checkCudaErrors(cudaMalloc((void **) &device_probabilities,
+                                   sizeof(double) * num_amplitudes_per_gpu));
+
+        // allocate memory on host for results
+        double *host_probabilities;
+        checkCudaErrors(cudaMallocHost((void **) &host_probabilities,
+                                       sizeof(double) * num_amplitudes_per_gpu));
+
+        #ifdef HAS_PROFILER
+            sdkStartTimer(&copy_device_to_host_timer);
+        #endif
+
+        // run measure kernel
+        local_amplitudes[gpu_id].measure(
+            num_amplitudes_per_gpu,
+            0,
+            device_probabilities,
+            stream);
+
+
+        checkCudaErrors(cudaMemcpy(host_probabilities,
+                                   device_probabilities,
+                                   sizeof(double) * num_amplitudes_per_gpu,
+                                   cudaMemcpyDeviceToHost));
+
+        checkCudaErrors(cudaDeviceSynchronize());
+
+        #ifdef HAS_PROFILER
+            sdkStopTimer(&copy_device_to_host_timer);
+        #endif
+
+        for(int amplitude_id_on_gpu = 0;
+                amplitude_id_on_gpu < num_amplitudes_per_gpu;
+                amplitude_id_on_gpu++)
+            probabilities[amplitude_id_on_gpu + gpu_id * num_amplitudes_per_gpu] =
+                host_probabilities[amplitude_id_on_gpu];
+
+
+        checkCudaErrors(cudaDeviceReset());
+    }
+}
+
+extern "C" void concurrent_measure_on_gpu(int num_amplitudes_per_gpu, double *probabilities)
 {
 
     #pragma omp parallel for num_threads(num_gpus_per_node_used)
@@ -135,18 +257,82 @@ extern "C" void measure_on_gpu(int num_amplitudes_per_gpu, double *probabilities
     {
         checkCudaErrors(cudaSetDevice(gpu_id));
 
-        double * gpu_probabilities =
-            local_amplitudes[gpu_id].measure(num_amplitudes_per_gpu);
+        int stream_size = 64;
 
-        for(int amplitude_id_on_gpu = 0;
-                amplitude_id_on_gpu < num_amplitudes_per_gpu;
-                amplitude_id_on_gpu++)
-        {
-            probabilities[amplitude_id_on_gpu + gpu_id * num_amplitudes_per_gpu] =
-                gpu_probabilities[amplitude_id_on_gpu];
+        // compute number of streams necessary
+        int num_streams = num_amplitudes_per_gpu / stream_size;
+
+        cudaStream_t streams[num_streams];
+
+        // allocate memory on host for results
+        double *host_probabilities;
+        checkCudaErrors(cudaMallocHost((void **) &host_probabilities,
+                                       sizeof(double) * num_amplitudes_per_gpu));
+
+        // allocate memory on device for results
+        double *device_probabilities;
+        checkCudaErrors(cudaMalloc((void **) &device_probabilities,
+                                   sizeof(double) * stream_size));
+
+        // create all streams
+        for (int stream_id = 0; stream_id < num_streams; ++stream_id) {
+            checkCudaErrors(cudaStreamCreate(&streams[stream_id]));
         }
+
+        #ifdef HAS_PROFILER
+            sdkStartTimer(&copy_device_to_host_timer);
+        #endif
+
+        // loop on all streams
+        for (int stream_id = 0; stream_id < num_streams; ++stream_id) {
+
+            // run measure kernel
+            local_amplitudes[gpu_id].measure(
+                stream_size,
+                stream_id * stream_size,
+                device_probabilities,
+                streams[stream_id]);
+        }
+
+        for (int stream_id = 0; stream_id < num_streams; ++stream_id) {
+
+            checkCudaErrors(cudaMemcpyAsync(device_probabilities,
+                                            host_probabilities + stream_id * stream_size,
+                                            sizeof(double) * stream_size,
+                                            cudaMemcpyDeviceToHost,
+                                            streams[stream_id]));
+
+        }
+
+        for (int stream_id = 0; stream_id < num_streams; ++stream_id) {
+            checkCudaErrors(cudaStreamSynchronize(streams[stream_id]));
+        }
+        //checkCudaErrors(cudaDeviceSynchronize());
+
+        #ifdef HAS_PROFILER
+            sdkStopTimer(&copy_device_to_host_timer);
+        #endif
+
+        for (int stream_id = 0; stream_id < num_streams; ++stream_id) {
+            checkCudaErrors(cudaStreamDestroy(streams[stream_id]));
+        }
+
+        for(int id = 0; id < num_amplitudes_per_gpu; id++)
+        {
+            probabilities[id] = host_probabilities[id];
+        }
+
         checkCudaErrors(cudaDeviceReset());
     }
+}
+
+extern "C" void measure_on_gpu(int num_amplitudes_per_gpu, double *probabilities)
+{
+    #ifdef USE_CONCURRENT_COPY
+        concurrent_measure_on_gpu(num_amplitudes_per_gpu, probabilities);
+    #else 
+        sequential_measure_on_gpu(num_amplitudes_per_gpu, probabilities);
+    #endif
 }
 
 extern "C" void apply_one_qubit_gate_gpu_local(double *gate_matrix_real,
@@ -201,12 +387,17 @@ extern "C" void split_amplitudes_between_gpus(int num_amplitudes_per_gpu,
         double *partner_amplitudes_real,
         double *partner_amplitudes_imaginary)
 {
+    #pragma omp parallel for num_threads(num_gpus_per_node_used)
     for(int gpu_id = 0; gpu_id < num_gpus_per_node_used; gpu_id++)
     {
         checkCudaErrors(cudaSetDevice(gpu_id));
 
         int
         start_index = gpu_id * num_amplitudes_per_gpu;
+
+        #ifdef HAS_PROFILER
+            sdkStartTimer(&copy_host_to_device_timer);
+        #endif
 
         checkCudaErrors(cudaMemcpy(
                             local_amplitudes[gpu_id].real_parts,
@@ -231,6 +422,9 @@ extern "C" void split_amplitudes_between_gpus(int num_amplitudes_per_gpu,
                             &partner_amplitudes_imaginary[start_index],
                             sizeof(double) * num_amplitudes_per_gpu,
                             cudaMemcpyHostToDevice));
+        #ifdef HAS_PROFILER
+            sdkStopTimer(&copy_host_to_device_timer);
+        #endif
     }
 }
 
@@ -239,11 +433,17 @@ extern "C" void retrieve_amplitudes_on_host(
     double *local_amplitudes_real,
     double *local_amplitudes_imaginary)
 {
+    #pragma omp parallel for num_threads(num_gpus_per_node_used)
     for(int gpu_id = 0; gpu_id < num_gpus_per_node_used; gpu_id++)
     {
         checkCudaErrors(cudaSetDevice(gpu_id));
 
         int start_index = gpu_id * num_amplitudes_per_gpu;
+
+        #ifdef HAS_PROFILER
+            sdkStartTimer(&copy_device_to_host_timer);
+        #endif
+
         checkCudaErrors(cudaMemcpy(
                             &local_amplitudes_real[start_index],
                             local_amplitudes[gpu_id].real_parts,
@@ -255,5 +455,9 @@ extern "C" void retrieve_amplitudes_on_host(
                             local_amplitudes[gpu_id].imaginary_parts,
                             sizeof(double) * num_amplitudes_per_gpu,
                             cudaMemcpyDeviceToHost));
+
+        #ifdef HAS_PROFILER
+            sdkStopTimer(&copy_device_to_host_timer);
+        #endif
     }
 }

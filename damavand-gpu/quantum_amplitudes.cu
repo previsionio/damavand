@@ -1,22 +1,24 @@
 #include <iostream>
 #include <cuda.h>
 #include <cuda_runtime.h>
-#include <device_launch_parameters.h>
 #include <helper_cuda.h>
+#include <device_launch_parameters.h>
 #include <iostream>
 #include <vector>
 
-#include "quantum_amplitudes.cuh"
+#include "utils.cuh"
 #include "kernels.cuh"
+#include "quantum_amplitudes.cuh"
+
+QuantumAmplitudes::QuantumAmplitudes()
+{
+    occupancy_strategy = Automatic;
+}
 
 void
 QuantumAmplitudes::set_zero_state(int num_amplitudes_per_gpu,
                                   bool is_first_gpu)
 {
-
-    int block_size;
-    int min_grid_size;
-    int grid_size;
 
     checkCudaErrors(cudaMalloc((void **) &real_parts,
                                sizeof(double) * num_amplitudes_per_gpu));
@@ -26,36 +28,48 @@ QuantumAmplitudes::set_zero_state(int num_amplitudes_per_gpu,
 
     if(is_first_gpu)
     {
-        cudaOccupancyMaxPotentialBlockSize(
-            &min_grid_size,
-            &block_size,
-            init_zero_state_on_first_gpu,
-            0,
-            num_amplitudes_per_gpu);
 
-        grid_size = (num_amplitudes_per_gpu + block_size - 1) / block_size;
+      auto parameters = get_launching_parameters(
+          occupancy_strategy,
+          num_amplitudes_per_gpu,
+          init_zero_state_on_first_gpu);
 
-        init_zero_state_on_first_gpu <<< grid_size, block_size >>>(
+#ifdef HAS_PROFILER
+        sdkStartTimer(&init_kernel_timer);
+#endif
+        init_zero_state_on_first_gpu <<< parameters.grid_size, parameters.block_size >>>(
             num_amplitudes_per_gpu,
             real_parts,
             imaginary_parts);
+
+        checkCudaErrors(cudaDeviceSynchronize());
+
+#ifdef HAS_PROFILER
+        sdkStopTimer(&init_kernel_timer);
+#endif
     }
     else
     {
-        cudaOccupancyMaxPotentialBlockSize(
-            &min_grid_size,
-            &block_size,
-            init_zero_state_on_other_gpu,
-            0,
-            num_amplitudes_per_gpu);
 
-        grid_size = (num_amplitudes_per_gpu + block_size - 1) / block_size;
-        init_zero_state_on_other_gpu <<< grid_size, block_size >>>(
+      auto parameters = get_launching_parameters(
+          occupancy_strategy,
+          num_amplitudes_per_gpu,
+          init_zero_state_on_other_gpu);
+
+#ifdef HAS_PROFILER
+        sdkStartTimer(&init_kernel_timer);
+#endif
+        init_zero_state_on_other_gpu <<< parameters.grid_size, parameters.block_size >>>(
             num_amplitudes_per_gpu,
             real_parts,
             imaginary_parts);
+
+        checkCudaErrors(cudaDeviceSynchronize());
+
+#ifdef HAS_PROFILER
+        sdkStopTimer(&init_kernel_timer);
+#endif
     }
-    checkCudaErrors(cudaDeviceSynchronize());
 }
 
 void
@@ -64,6 +78,9 @@ QuantumAmplitudes::load_on_device(
     double *amplitudes_real,
     double *amplitudes_imaginary)
 {
+#ifdef HAS_PROFILER
+    sdkStartTimer(&copy_host_to_device_timer);
+#endif
     checkCudaErrors(cudaMemcpy(real_parts,
                                amplitudes_real,
                                sizeof(double) * num_amplitudes_per_gpu,
@@ -73,6 +90,11 @@ QuantumAmplitudes::load_on_device(
                                amplitudes_real,
                                sizeof(double) * num_amplitudes_per_gpu,
                                cudaMemcpyHostToDevice));
+    checkCudaErrors(cudaDeviceSynchronize());
+
+#ifdef HAS_PROFILER
+    sdkStopTimer(&copy_host_to_device_timer);
+#endif
 }
 
 void
@@ -82,9 +104,6 @@ QuantumAmplitudes::apply_one_qubit_gate(
     int num_amplitudes_per_gpu,
     int control_qubit, int target_qubit)
 {
-    int block_size;
-    int min_grid_size;
-    int grid_size;
 
     cuDoubleComplex gate_matrix[4];
 
@@ -97,17 +116,16 @@ QuantumAmplitudes::apply_one_qubit_gate(
     gate_matrix[3] =
         make_cuDoubleComplex(gate_matrix_real[3], gate_matrix_imaginary[3]);
 
-    // get optimized block_size
-    cudaOccupancyMaxPotentialBlockSize(
-        &min_grid_size,
-        &block_size,
-        apply_one_qubit_gate_kernel_local,
-        0,
-        num_amplitudes_per_gpu);
+    auto parameters = get_launching_parameters(
+        occupancy_strategy,
+        num_amplitudes_per_gpu,
+        apply_one_qubit_gate_kernel_local);
 
-    grid_size =(num_amplitudes_per_gpu + block_size - 1) / block_size;
+#ifdef HAS_PROFILER
+    sdkStartTimer(&apply_kernel_timer);
+#endif
 
-    apply_one_qubit_gate_kernel_local <<< grid_size, block_size >>>(
+    apply_one_qubit_gate_kernel_local <<< parameters.grid_size, parameters.block_size >>>(
         num_amplitudes_per_gpu,
         control_qubit,
         target_qubit,
@@ -119,6 +137,11 @@ QuantumAmplitudes::apply_one_qubit_gate(
         imaginary_parts);
 
     checkCudaErrors(cudaDeviceSynchronize());
+
+#ifdef HAS_PROFILER
+    sdkStopTimer(&apply_kernel_timer);
+#endif
+
 }
 
 void
@@ -132,9 +155,6 @@ QuantumAmplitudes::apply_one_qubit_gate_distributed(
     int control_qubit,
     int target_qubit)
 {
-    int block_size;
-    int min_grid_size;
-    int grid_size;
 
     cuDoubleComplex gate_matrix[4];
 
@@ -147,17 +167,15 @@ QuantumAmplitudes::apply_one_qubit_gate_distributed(
     gate_matrix[3] =
         make_cuDoubleComplex(gate_matrix_real[3], gate_matrix_imaginary[3]);
 
-    // get optimized block_size
-    cudaOccupancyMaxPotentialBlockSize(
-        &min_grid_size,
-        &block_size,
-        apply_one_qubit_gate_kernel_distributed,
-        0,
-        num_amplitudes_per_gpu);
+    auto parameters = get_launching_parameters(
+        occupancy_strategy,
+        num_amplitudes_per_gpu,
+        apply_one_qubit_gate_kernel_distributed);
 
-    grid_size =(num_amplitudes_per_gpu + block_size - 1) / block_size;
-
-    apply_one_qubit_gate_kernel_distributed <<< grid_size, block_size >>>(
+#ifdef HAS_PROFILER
+    sdkStartTimer(&apply_kernel_timer);
+#endif
+    apply_one_qubit_gate_kernel_distributed <<< parameters.grid_size, parameters.block_size >>>(
         num_amplitudes_per_gpu,
         control_qubit, target_qubit,
         gate_matrix[0],
@@ -170,43 +188,55 @@ QuantumAmplitudes::apply_one_qubit_gate_distributed(
         partner_amplitudes.imaginary_parts);
 
     checkCudaErrors(cudaDeviceSynchronize());
+
+#ifdef HAS_PROFILER
+    sdkStopTimer(&apply_kernel_timer);
+#endif
+
 }
 
-double *
-QuantumAmplitudes::measure(int num_amplitudes_per_gpu)
+void
+QuantumAmplitudes::measure(
+    int num_amplitudes_per_gpu,
+    int first_amplitudes_index,
+    double* device_probabilities,
+    cudaStream_t stream)
 {
-    int block_size;
-    int min_grid_size;
-    int grid_size;
-
-    cudaOccupancyMaxPotentialBlockSize(
-        &min_grid_size,
-        &block_size,
-        apply_one_qubit_gate_kernel_local,
-        0, num_amplitudes_per_gpu);
-
-    grid_size = (num_amplitudes_per_gpu + block_size - 1) / block_size;
-
-
-    double *gpu_probabilities;
-    gpu_probabilities = (double *) malloc(num_amplitudes_per_gpu * sizeof(double));
-
-    double *prob;
-    checkCudaErrors(cudaMalloc((void **) &prob,
-                               sizeof(double) * num_amplitudes_per_gpu));
-
-    measure_amplitudes_on_device <<< grid_size, block_size >>>(
+#ifdef USE_SHARED_MEMORY
+    auto parameters = get_launching_parameters(
+        occupancy_strategy,
         num_amplitudes_per_gpu,
-        prob,
+        measure_amplitudes_on_device_shared);
+#else
+    auto parameters = get_launching_parameters(
+        occupancy_strategy,
+        num_amplitudes_per_gpu,
+        measure_amplitudes_on_device_global);
+#endif
+
+#ifdef HAS_PROFILER
+    sdkStartTimer(&measure_kernel_timer);
+#endif
+
+#ifdef USE_SHARED_MEMORY
+    measure_amplitudes_on_device_shared <<< parameters.grid_size, parameters.block_size, 0, stream>>>(
+        num_amplitudes_per_gpu,
+        first_amplitudes_index,
+        device_probabilities,
         real_parts,
         imaginary_parts);
-
-    checkCudaErrors(cudaMemcpy(gpu_probabilities,
-                               prob,
-                               sizeof(double) * num_amplitudes_per_gpu,
-                               cudaMemcpyDeviceToHost));
+#else
+    measure_amplitudes_on_device_global <<< parameters.block_size, parameters.block_size, 0, stream>>>(
+        num_amplitudes_per_gpu,
+        first_amplitudes_index,
+        device_probabilities,
+        real_parts,
+        imaginary_parts);
+#endif
 
     checkCudaErrors(cudaDeviceSynchronize());
 
-    return gpu_probabilities;
+#ifdef HAS_PROFILER
+    sdkStopTimer(&measure_kernel_timer);
+#endif
 }

@@ -12,8 +12,9 @@
 #include <cuda_profiler_api.h>
 #endif
 
-__global__ void measure_amplitudes_on_device(
+__global__ void measure_amplitudes_on_device_shared(
     int num_amplitudes_per_gpu,
+    int first_amplitude_index,
     double *prob,
     double *device_local_amplitudes_real,
     double *device_local_amplitudes_imaginary)
@@ -23,10 +24,39 @@ __global__ void measure_amplitudes_on_device(
     if(thread_id >= num_amplitudes_per_gpu)
         return;
 
-    // TRICK: in order to avoid allocating another vector to get the probabilities,
-    // we reuse device_local_amplitudes_real to store the result
-    prob[thread_id] = pow(device_local_amplitudes_real[thread_id], 2) +
-                      pow(device_local_amplitudes_imaginary[thread_id], 2);
+    extern __shared__ double shared_amplitudes_real[];
+    extern __shared__ double shared_amplitudes_imaginary[];
+
+    shared_amplitudes_real[thread_id] =
+      device_local_amplitudes_real[first_amplitude_index + thread_id];
+
+    shared_amplitudes_imaginary[thread_id] =
+      device_local_amplitudes_imaginary[first_amplitude_index + thread_id];
+
+    __syncthreads();
+
+    // do not use pow(x, 2) as it is heavy-weighted (CUDA C++ best practices guide)
+    prob[first_amplitude_index + thread_id] =
+        shared_amplitudes_real[thread_id] * shared_amplitudes_real[thread_id] +
+        shared_amplitudes_imaginary[thread_id] * shared_amplitudes_real[thread_id];
+}
+
+__global__ void measure_amplitudes_on_device_global(
+    int num_amplitudes_per_gpu,
+    int first_amplitude_index,
+    double *prob,
+    double *device_local_amplitudes_real,
+    double *device_local_amplitudes_imaginary)
+{
+    int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if(thread_id >= num_amplitudes_per_gpu)
+        return;
+
+    // do not use pow(x, 2) as it is heavy-weighted (CUDA C++ best practices guide)
+    prob[thread_id] =
+        device_local_amplitudes_real[thread_id] * device_local_amplitudes_real[thread_id] +
+        device_local_amplitudes_imaginary[thread_id] * device_local_amplitudes_imaginary[thread_id];
 }
 
 __global__ void init_zero_state_on_first_gpu(

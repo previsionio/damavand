@@ -1,13 +1,16 @@
-#ifndef QUANTUM_AMPLITUDES_H
-#define QUANTUM_AMPLITUDES_H
+#ifndef QUANTUM_AMPLITUDES_CUH
+#define QUANTUM_AMPLITUDES_CUH
+#include "utils.cuh"
 
 class QuantumAmplitudes
 {
 public:
     double *real_parts;
     double *imaginary_parts;
+    OccupancyStrategy occupancy_strategy;
 
 public:
+    QuantumAmplitudes();
     void set_zero_state(int num_amplitudes_per_gpu, bool is_first_gpu);
 
     void load_on_device(
@@ -30,6 +33,12 @@ public:
         int control_qubit,
         int target_qubit);
 
-    double *measure(int num_amplitudes_per_gpu);
+    void measure(
+        int num_amplitudes_per_gpu,
+        int first_amplitudes_index,
+        double* device_probabilities,
+        cudaStream_t stream);
+
 };
+
 #endif
