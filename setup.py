@@ -1,5 +1,5 @@
-from skbuild import setup
 from setuptools_rust import Binding, RustExtension
+from setuptools import setup, find_packages
 
 
 def make_rust_extension(module_name):
@@ -9,9 +9,10 @@ def make_rust_extension(module_name):
 
 setup(
     name="damavand",
-    version="0.1.0",
+    version="0.1.16",
     rust_extensions=[ make_rust_extension("damavand") ],
-    packages=["damavand"],
+    packages=find_packages("./", exclude=("./tests",)),
     include_package_data=True,
+    setup_requires=["setuptools", "setuptools-rust"],
     zip_safe=False,
 )
