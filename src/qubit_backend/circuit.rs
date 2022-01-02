@@ -18,6 +18,7 @@ use sysinfo::{System, SystemExt};
 #[link(name = "damavand-gpu", kind = "static")]
 extern "C" {
     fn get_number_of_available_gpus() -> libc::c_int;
+    fn print_timers() -> libc::c_void;
 
     fn get_memory_for_gpu(gpu_id: libc::c_int) -> libc::c_double;
 
@@ -308,8 +309,8 @@ impl Circuit {
             }
         }
 
-        #[cfg(feature = "gpu")]
-        self.retrieve_amplitudes_on_host();
+        // #[cfg(feature = "gpu")]
+        // self.retrieve_amplitudes_on_host();
     }
 
     /// Retrieves amplitudes on host when the computation was perfromed on GPUs.
@@ -507,6 +508,10 @@ impl Circuit {
             for i in 0..self.num_amplitudes_per_node {
                 probabilities[i] = self.local_amplitudes[i].norm().powi(2);
             }
+        }
+        #[cfg(feature = "gpu")]
+        unsafe {
+            print_timers();
         }
         probabilities
     }
