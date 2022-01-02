@@ -1,2 +1,6 @@
 include Cargo.toml
+include build.rs
+include CMakeLists.txt
 recursive-include src *
+recursive-include damavand-gpu *
+recursive-include cmake *
