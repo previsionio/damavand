@@ -418,21 +418,19 @@ impl Circuit {
     /// Extract the value of observables from a sample.
     ///
     /// # Arguments
-    /// `sample`: the sample drawn from a probability distribution.
+    /// `sample_index`: the sample index drawn from a probability distribution.
     ///
     /// # Returns
     /// `Vec<f64>`: a vector containing the values of the observables
     pub fn extract_observable_from_sample(&self, sample: usize) -> Vec<f64> {
         let mut samples = vec![];
         for observable_index in self.observables.clone() {
-            let readout_qubit = self.num_qubits
-                - 1
-                - self.gates[observable_index]
+            let readout_qubit = self.gates[observable_index]
                     .lock()
                     .unwrap()
                     .get_target_qubit();
-            let bit_value = (sample & (1 << (readout_qubit - 1))) >> (readout_qubit - 1);
-            if bit_value > 0 {
+            let bit_value = !sample & (1 << (readout_qubit) ) > 0;
+            if bit_value {
                 samples.push(1.);
             } else {
                 samples.push(-1.);
@@ -506,13 +504,13 @@ impl Circuit {
             }
         } else {
             for i in 0..self.num_amplitudes_per_node {
-                probabilities[i] = self.local_amplitudes[i].norm().powi(2);
+                probabilities[i] = self.local_amplitudes[i].norm_sqr();
             }
         }
-        #[cfg(feature = "gpu")]
-        unsafe {
-            print_timers();
-        }
+        // #[cfg(feature = "gpu")]
+        // unsafe {
+        //     print_timers();
+        // }
         probabilities
     }
 
