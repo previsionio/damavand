@@ -6,14 +6,14 @@ In order to learn more about damavand, refer to the [documentation](https://mich
 ## Development status
 
 1. Core features:
-  * single node CPU ✔️
+  * single node CPU multithreading ✔️
   * single node GPU ✔️
-  * multiple nodes CPU ✔️
+  * multiple nodes CPU multithreading ✔️
   * single node multiple GPUs ✔️
   * multiple nodes multiple GPUs ✔️
-2. Documentation 🛠️ (under construction) 
-3. README.md 🛠️ (under construction) 
-4. pypi 🛠️ (under construction) 
+2. pypi  ✔️
+3. README.md ✔️
+3. Documentation 🛠️ (under construction)
 
 ## Installation
 
@@ -37,12 +37,12 @@ applying a given quantum gate. The different apply methods are:
 1. `brute_force` brute matrix vector multiplication (requires a lot of memory).
 2. `shuffle` smart implementation of matrix vector multiplication where the matrix is the result of a series of
    kronecker products (requires less memory but is still a bit slow).
-3. `"multithreading"` runs on a single node multi CPUs.
-4. `"gpu"` runs on a single node single GPU.
-5. `"distributed_cpu"` runs on a multiple nodes multiple CPUs.
-6. `"distributed_gpu"` runs on a single node multiple GPUs or on multiple nodes multiple GPUs.
+3. `multithreading` runs on a single node multi CPUs.
+4. `gpu` runs on a single node single GPU.
+5. `distributed_cpu` runs on a multiple nodes multiple CPUs.
+6. `distributed_gpu` runs on a single node multiple GPUs or on multiple nodes multiple GPUs.
 
-The default `"apply_method"` is `"multithreading"`. this can be changes by providing it as an option to the Circuit
+The default `apply_method` is `multithreading`. this can be changes by providing it as an option to the Circuit
 builder, as shown in the following example:
 
 ```python
