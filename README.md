@@ -25,7 +25,7 @@ pip3 install damavand
 ### From sources
 
 ```bash
-git clone https://github.com/MichelNowak1/damavand.git
+git clone https://github.com/previsionio/damavand.git
 cd damavand/
 python3 setup.py install
 ```
@@ -92,7 +92,7 @@ Run `sbatch run.sh` to lounch the script
 Damavand is linked to pennylane [PennyLane](https://pennylane.ai/), a library with many tools to approach qubit based
 and continuous-variable based quantum architectures.
 
-The plugin that allows this can be found [here](https://github.com/MichelNowak1/pennylane-damavand).
+The plugin that allows this can be found [here](https://github.com/previsionio/pennylane-damavand).
 
 <p align="center">
   <img src="figures/damavand_gradient_descent.png" width="400em" />
