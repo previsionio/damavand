@@ -21,6 +21,7 @@ public:
     void apply_one_qubit_gate(
         double *gate_matrix_real,
         double *gate_matrix_imaginary,
+        int num_qubits,
         int num_amplitudes_per_gpu,
         int control_qubit,
         int target_qubit);
@@ -29,6 +30,7 @@ public:
         QuantumAmplitudes partner_amplitudes,
         double *gate_matrix_real,
         double *gate_matrix_imaginary,
+        int num_qubits,
         int num_amplitudes_per_gpu,
         int control_qubit,
         int target_qubit);
@@ -38,7 +40,6 @@ public:
         int first_amplitudes_index,
         double* device_probabilities,
         cudaStream_t stream);
-
 };
 
 #endif

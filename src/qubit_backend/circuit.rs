@@ -127,6 +127,9 @@ impl Circuit {
 
         #[cfg(feature = "gpu")]
         if [utils::ApplyMethod::GPU, utils::ApplyMethod::DistributedGPU].contains(&apply) {
+            if num_gpus_available_per_node == 0 {
+                panic!("Could not find any GPU.");
+            }
             for gpu_id in 0..num_gpus_available_per_node {
                 let memory_per_gpu = unsafe { get_memory_for_gpu(gpu_id) };
                 gpu_memory_per_node += memory_per_gpu;
@@ -309,8 +312,8 @@ impl Circuit {
             }
         }
 
-        // #[cfg(feature = "gpu")]
-        // self.retrieve_amplitudes_on_host();
+        #[cfg(feature = "gpu")]
+        self.retrieve_amplitudes_on_host();
     }
 
     /// Retrieves amplitudes on host when the computation was perfromed on GPUs.
@@ -332,6 +335,8 @@ impl Circuit {
                         local_imag.as_mut_ptr(),
                     );
                 }
+
+                self.local_amplitudes = Array::zeros(self.num_amplitudes_per_node);
 
                 for i in 0..self.num_amplitudes_per_node {
                     self.local_amplitudes[i] = Complex::<f64> {
@@ -429,11 +434,11 @@ impl Circuit {
                     .lock()
                     .unwrap()
                     .get_target_qubit();
-            let bit_value = !sample & (1 << (readout_qubit) ) > 0;
-            if bit_value {
-                samples.push(1.);
-            } else {
+            let bit_value = (sample >> (self.num_qubits - 1 - readout_qubit)) & 1;
+            if bit_value > 0 {
                 samples.push(-1.);
+            } else {
+                samples.push(1.);
             }
         }
         samples

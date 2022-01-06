@@ -36,6 +36,7 @@ __global__ void init_zero_state_on_other_gpu(
     double *device_local_amplitudes_imaginary);
 
 __global__ void apply_one_qubit_gate_kernel_local(
+    int num_qubits,
     int num_amplitudes_per_gpu,
     int control_qubit,
     int target_qubit,
@@ -47,6 +48,7 @@ __global__ void apply_one_qubit_gate_kernel_local(
     double *device_local_amplitudes_imaginary);
 
 __global__ void apply_one_qubit_gate_kernel_distributed(
+    int num_qubits,
     int num_amplitudes_per_gpu,
     int control_qubit,
     int target_qubit,

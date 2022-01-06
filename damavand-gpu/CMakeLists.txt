@@ -2,8 +2,9 @@ project(damavand-gpu LANGUAGES C CXX CUDA)
 cmake_minimum_required(VERSION 3.0)
 
 option(HAS_PROFILER "Enables profiling" FALSE)
-option(USE_CONCURRENT_COPY "Uses concurrent copy and kernel execution when possible" TRUE)
-option(USE_SHARED_MEMORY "Uses shared memory when possbile" TRUE)
+option(USE_CONCURRENT_COPY "Uses concurrent copy and kernel execution when possible" FALSE)
+option(USE_SHARED_MEMORY "Uses shared memory when possbile" FALSE)
+option(AUTOMATIC_OCCUPANCY_STRATEGY "Automatic occupancy strategy" TRUE)
 
 find_package(CUDA REQUIRED)
 find_package(OpenMP REQUIRED)
@@ -17,6 +18,10 @@ set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} --generate-line-info")
 
 if (HAS_PROFILER)
   set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -DHAS_PROFILER")
+endif()
+
+if (AUTOMATIC_OCCUPANCY_STRATEGY)
+  set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -DAUTOMATIC_OCCUPANCY_STRATEGY")
 endif()
 
 if (USE_CONCURRENT_COPY)

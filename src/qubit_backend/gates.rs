@@ -167,11 +167,11 @@ pub struct CNOT {
 impl CNOT {
     #[new]
     pub fn new(control_qubit: usize, target_qubit: usize) -> CNOT {
-        let mut gate_matrix = Array2::<Complex<f64>>::zeros([4, 4]);
-        gate_matrix[[0, 0]] = Complex::<f64> { re: 1., im: 0. };
+        let mut gate_matrix = Array2::<Complex<f64>>::zeros([2, 2]);
+        gate_matrix[[0, 0]] = Complex::<f64> { re: 0., im: 0. };
+        gate_matrix[[0, 1]] = Complex::<f64> { re: 1., im: 0. };
         gate_matrix[[1, 0]] = Complex::<f64> { re: 1., im: 0. };
-        gate_matrix[[2, 1]] = Complex::<f64> { re: 1., im: 0. };
-        gate_matrix[[2, 3]] = Complex::<f64> { re: 1., im: 0. };
+        gate_matrix[[1, 1]] = Complex::<f64> { re: 0., im: 0. };
         CNOT {
             name: "CNOT".to_string(),
             gate_matrix: gate_matrix,
@@ -423,13 +423,13 @@ impl RotationX {
                 },
                 Complex::<f64> {
                     re: 0.,
-                    im: (-theta / 2.).sin()
+                    im: - (theta / 2.).sin()
                 }
             ],
             [
                 Complex::<f64> {
                     re: 0.,
-                    im: (-theta / 2.).sin()
+                    im: - (theta / 2.).sin()
                 },
                 Complex::<f64> {
                     re: (theta / 2.).cos(),

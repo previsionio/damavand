@@ -12,7 +12,11 @@
 
 QuantumAmplitudes::QuantumAmplitudes()
 {
+#ifdef AUTOMATIC_OCCUPANCY_STRATEGY
     occupancy_strategy = Automatic;
+#else
+    occupancy_strategy = Linear;
+#endif
 }
 
 void
@@ -101,10 +105,11 @@ void
 QuantumAmplitudes::apply_one_qubit_gate(
     double *gate_matrix_real,
     double *gate_matrix_imaginary,
+    int num_qubits,
     int num_amplitudes_per_gpu,
-    int control_qubit, int target_qubit)
+    int control_qubit,
+    int target_qubit)
 {
-
     cuDoubleComplex gate_matrix[4];
 
     gate_matrix[0] =
@@ -126,6 +131,7 @@ QuantumAmplitudes::apply_one_qubit_gate(
 #endif
 
     apply_one_qubit_gate_kernel_local <<< parameters.grid_size, parameters.block_size >>>(
+        num_qubits,
         num_amplitudes_per_gpu,
         control_qubit,
         target_qubit,
@@ -148,10 +154,9 @@ void
 QuantumAmplitudes::apply_one_qubit_gate_distributed(
     QuantumAmplitudes partner_amplitudes,
     double *gate_matrix_real,
-    double
-    *gate_matrix_imaginary,
-    int
-    num_amplitudes_per_gpu,
+    double *gate_matrix_imaginary,
+    int num_qubits,
+    int num_amplitudes_per_gpu,
     int control_qubit,
     int target_qubit)
 {
@@ -176,8 +181,10 @@ QuantumAmplitudes::apply_one_qubit_gate_distributed(
     sdkStartTimer(&apply_kernel_timer);
 #endif
     apply_one_qubit_gate_kernel_distributed <<< parameters.grid_size, parameters.block_size >>>(
+        num_qubits,
         num_amplitudes_per_gpu,
-        control_qubit, target_qubit,
+        control_qubit,
+        target_qubit,
         gate_matrix[0],
         gate_matrix[1],
         gate_matrix[2],

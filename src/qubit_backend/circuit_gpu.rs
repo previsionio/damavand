@@ -6,6 +6,7 @@ extern "C" {
     fn apply_one_qubit_gate_gpu_local(
         gate_matrix_real: *mut libc::c_double,
         gate_matrix_imaginary: *mut libc::c_double,
+        num_qubits: libc::c_int,
         num_amplitudes_per_gpu: libc::c_int,
         control_qubit: libc::c_int,
         target_qubit: libc::c_int,
@@ -14,6 +15,7 @@ extern "C" {
     fn apply_one_qubit_gate_gpu_distributed(
         gate_matrix_real: *mut libc::c_double,
         gate_matrix_imaginary: *mut libc::c_double,
+        num_qubits: libc::c_int,
         num_amplitudes_per_gpu: libc::c_int,
         control_qubit: libc::c_int,
         target_qubit: libc::c_int,
@@ -49,6 +51,7 @@ impl Circuit {
                     .map(|a| a.im)
                     .collect::<Vec<f64>>()
                     .as_mut_ptr(),
+                self.num_qubits as i32,
                 self.num_amplitudes_per_gpu as i32,
                 control,
                 target_qubit as i32,
@@ -82,6 +85,7 @@ impl Circuit {
                     .map(|a| a.im)
                     .collect::<Vec<f64>>()
                     .as_mut_ptr(),
+                self.num_qubits as i32,
                 self.num_amplitudes_per_gpu as i32,
                 control,
                 target_qubit as i32,

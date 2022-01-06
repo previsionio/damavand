@@ -123,10 +123,6 @@ pub fn convert_gate_to_operation(
     let gate = gate_.lock().unwrap();
     let active_matrix = gate.get_matrix();
 
-    // build identity matrix
-    let id_gate = gates::Identity::new();
-    let id_matrix = id_gate.get_matrix();
-
     // One qubit gates
     if gate.get_name() == "Identity"
         || gate.get_name() == "Hadamard"
@@ -144,16 +140,7 @@ pub fn convert_gate_to_operation(
             return active_matrix.clone();
         }
 
-        let mut matrix_list = Vec::<Array2<Complex<f64>>>::new();
-
-        // fill the matrix list in the right order
-        for qubit in (0..num_qubits).rev() {
-            if qubit == active_qubit {
-                matrix_list.push(active_matrix.clone());
-            } else {
-                matrix_list.push(id_matrix.clone());
-            }
-        }
+        let matrix_list = get_list_of_matrices(num_qubits, active_qubit, &active_matrix);
 
         let mut matrix = matrix_list[0].clone();
 
@@ -210,7 +197,7 @@ pub fn get_list_of_matrices(
 
     // fill the matrix list in the right order
     for qubit in (0..num_qubits).rev() {
-        if qubit == active_qubit {
+        if qubit == num_qubits - 1 - active_qubit {
             matrix_list.push(active_matrix.to_owned());
         } else {
             matrix_list.push(_id_matrix.to_owned());
@@ -243,10 +230,10 @@ pub fn get_cnot_list_of_matrices(
 
     // fill the matrix list in the right order
     for qubit in (0..num_qubits).rev() {
-        if qubit == control_qubit {
+        if qubit == num_qubits - 1 - control_qubit {
             inactive_matrix_list.push(inactive_projector.to_owned());
             active_matrix_list.push(active_projector.to_owned());
-        } else if qubit == target_qubit {
+        } else if qubit == num_qubits - 1 - target_qubit {
             inactive_matrix_list.push(id_matrix.to_owned());
             active_matrix_list.push(sigma_x.to_owned());
         } else {

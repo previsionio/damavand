@@ -103,8 +103,10 @@ extern "C" void print_timers()
 #endif
 }
 
-extern "C" void exchange_amplitudes_between_gpus(int current_gpu_rank, int partner_gpu_rank,
-        int num_amplitudes_per_gpu)
+extern "C" void exchange_amplitudes_between_gpus(
+    int current_gpu_rank,
+    int partner_gpu_rank,
+    int num_amplitudes_per_gpu)
 {
     #ifdef HAS_PROFILER
         sdkStartTimer(&copy_device_to_device_timer);
@@ -307,7 +309,6 @@ extern "C" void concurrent_measure_on_gpu(int num_amplitudes_per_gpu, double *pr
         for (int stream_id = 0; stream_id < num_streams; ++stream_id) {
             checkCudaErrors(cudaStreamSynchronize(streams[stream_id]));
         }
-        //checkCudaErrors(cudaDeviceSynchronize());
 
         #ifdef HAS_PROFILER
             sdkStopTimer(&copy_device_to_host_timer);
@@ -335,57 +336,73 @@ extern "C" void measure_on_gpu(int num_amplitudes_per_gpu, double *probabilities
     #endif
 }
 
-extern "C" void apply_one_qubit_gate_gpu_local(double *gate_matrix_real,
-        double *gate_matrix_imaginary,
-        int num_amplitudes_per_gpu,
-        int control_qubit, int target_qubit)
+extern "C" void apply_one_qubit_gate_gpu_local(
+    double *gate_matrix_real,
+    double *gate_matrix_imaginary,
+    int num_qubits,
+    int num_amplitudes_per_gpu,
+    int control_qubit,
+    int target_qubit)
 {
     #pragma omp parallel for num_threads(num_gpus_per_node_used)
     for(int gpu_id = 0; gpu_id < num_gpus_per_node_used; gpu_id++)
     {
         checkCudaErrors(cudaSetDevice(gpu_id));
-        local_amplitudes[gpu_id].apply_one_qubit_gate(gate_matrix_real,
-                gate_matrix_imaginary,
-                num_amplitudes_per_gpu,
-                control_qubit,
-                target_qubit);
+        local_amplitudes[gpu_id].apply_one_qubit_gate(
+            gate_matrix_real,
+            gate_matrix_imaginary,
+            num_qubits,
+            num_amplitudes_per_gpu,
+            control_qubit,
+            target_qubit);
     }
 }
 
-extern "C" void apply_one_qubit_gate_gpu_distributed(double *gate_matrix_real,
-        double *gate_matrix_imaginary,
-        int num_amplitudes_per_gpu,
-        int control_qubit, int target_qubit)
+extern "C" void apply_one_qubit_gate_gpu_distributed(
+    double *gate_matrix_real,
+    double *gate_matrix_imaginary,
+    int num_qubits,
+    int num_amplitudes_per_gpu,
+    int control_qubit,
+    int target_qubit)
 {
     #pragma omp parallel for num_threads(num_gpus_per_node_used)
     for(int gpu_id = 0; gpu_id < num_gpus_per_node_used; gpu_id++)
     {
         checkCudaErrors(cudaSetDevice(gpu_id));
-        local_amplitudes[gpu_id].apply_one_qubit_gate_distributed
-        (partner_amplitudes[gpu_id], gate_matrix_real, gate_matrix_imaginary,
-         num_amplitudes_per_gpu, control_qubit, target_qubit);
+        local_amplitudes[gpu_id].apply_one_qubit_gate_distributed(
+            partner_amplitudes[gpu_id],
+            gate_matrix_real,
+            gate_matrix_imaginary,
+            num_qubits,
+            num_amplitudes_per_gpu,
+            control_qubit,
+            target_qubit);
     }
 }
 
 //TODO amplitude encoding
-extern "C" void load_amplitudes_local_on_device(int num_amplitudes_per_gpu,
-        double *local_amplitudes_real,
-        double *local_amplitudes_imaginary)
+extern "C" void load_amplitudes_local_on_device(
+    int num_amplitudes_per_gpu,
+    double *local_amplitudes_real,
+    double *local_amplitudes_imaginary)
 {
     for(int gpu_id = 0; gpu_id < num_gpus_per_node_used; gpu_id++)
     {
         checkCudaErrors(cudaSetDevice(gpu_id));
-        local_amplitudes[gpu_id].load_on_device(num_amplitudes_per_gpu,
-                                                local_amplitudes_real,
-                                                local_amplitudes_imaginary);
+        local_amplitudes[gpu_id].load_on_device(
+            num_amplitudes_per_gpu,
+            local_amplitudes_real,
+            local_amplitudes_imaginary);
     }
 }
 
-extern "C" void split_amplitudes_between_gpus(int num_amplitudes_per_gpu,
-        double *local_amplitudes_real,
-        double *local_amplitudes_imaginary,
-        double *partner_amplitudes_real,
-        double *partner_amplitudes_imaginary)
+extern "C" void split_amplitudes_between_gpus(
+    int num_amplitudes_per_gpu,
+    double *local_amplitudes_real,
+    double *local_amplitudes_imaginary,
+    double *partner_amplitudes_real,
+    double *partner_amplitudes_imaginary)
 {
     #pragma omp parallel for num_threads(num_gpus_per_node_used)
     for(int gpu_id = 0; gpu_id < num_gpus_per_node_used; gpu_id++)
