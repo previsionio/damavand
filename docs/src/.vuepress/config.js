@@ -54,15 +54,11 @@ module.exports = {
         link: '/pennylane-plugin/',
       },
       {
-        text: 'prevision-quantum-nn',
-        link: '/prevision-quantum-nn/',
-      },
-      {
         text: 'Github',
         link: 'https://github.com/MichelNowak1/damavand'
       }
     ],
-    sidebar: ['/', '/install/', '/guide/', '/hpc/', '/pennylane-plugin/', '/prevision-quantum-nn/']
+    sidebar: ['/', '/install/', '/guide/', '/hpc/', '/pennylane-plugin/']
   },
 
   /**
