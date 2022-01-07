@@ -34,12 +34,12 @@ impl Circuit {
         ndarray::Zip::indexed(&mut self.local_amplitudes).for_each(
             |amplitude_index, local_amplitude| {
                 let apply_gate = if control_qubit.is_some() {
-                    (amplitude_index >> (num_qubits - 1 - control_qubit.unwrap())) & 1
+                    (amplitude_index >> control_qubit.unwrap()) & 1
                 } else {
                     1_usize
                 };
                 let partner_amplitude_index =
-                    Circuit::compute_partner_rank(amplitude_index, 1, 1 << (num_qubits - 1 - target_qubit));
+                    Circuit::compute_partner_rank(amplitude_index, 1, 1 << target_qubit);
 
                 if apply_gate == 1_usize {
                     let lower_amplitude = local_amplitude.clone();
@@ -85,13 +85,12 @@ impl Circuit {
             )
         };
         drop(gate);
-        let num_qubits = self.num_qubits;
 
         ndarray::Zip::indexed(&mut self.local_amplitudes)
             .and(&self.partner_amplitudes)
             .par_for_each(|amplitude_index, local_amplitude, partner_amplitude| {
                 let apply_gate = if control_qubit.is_some() {
-                    amplitude_index & (1 << num_qubits - 1 - control_qubit.unwrap())
+                    amplitude_index & (1 << control_qubit.unwrap())
                 } else {
                     1_usize
                 };

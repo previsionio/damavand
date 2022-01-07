@@ -60,7 +60,9 @@ circuit.forward()
 circuit.measure()
 
 num_samples=10
-circuit.sample(num_samples)
+samples = circuit.sample(num_samples)
+
+observables = circuit.extract_expectation_values(samples)
 ```
 
 ## Slurm workload run:

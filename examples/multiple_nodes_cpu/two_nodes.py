@@ -18,7 +18,7 @@ def run_circuit(num_qubits, num_layers, apply_method="brute_force"):
     
     circuit.forward()
     samples = circuit.sample()
-    return np.mean(samples, axis=0)
+    return np.mean(circuit.extract_expectation_values(samples), axis=0)
 
 apply_methods = ["distributed_cpu"]
 
@@ -26,13 +26,6 @@ for apply_method in apply_methods:
     num_layers = 1
     times = []
     for num_qubits in range(3, 4):
-        print()
-        print()
-        print()
-        print(num_qubits)
-        print()
-        print()
-        print()
         start = time.time()
         results = run_circuit(num_qubits, num_layers, apply_method)
         print(results)

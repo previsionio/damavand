@@ -68,9 +68,9 @@ impl Circuit {
         &mut self,
         num_samples: usize,
         node_probabilities: Vec<f64>,
-    ) -> Vec<Vec<f64>> {
+    ) -> Vec<usize> {
         let num_observables = self.observables.len();
-        let mut samples = vec![vec![0_f64; num_observables]; num_samples];
+        let mut samples = vec![0_usize; num_samples];
 
         let world = SystemCommunicator::world();
 
@@ -128,8 +128,7 @@ impl Circuit {
             {
                 let amplitude_index =
                     utils::sample_from_discrete_distribution(&node_probabilities).unwrap();
-                // println!("amplitude index {}", amplitude_index);
-                samples[sample_index] = self.extract_observable_from_sample(amplitude_index);
+                samples[sample_index] = amplitude_index;
             }
 
             // sampled on other nodes than root_node: need for communication
@@ -144,14 +143,12 @@ impl Circuit {
                 && current_node_rank != sampled_node_rank as i32
             {
                 let (msg, _) = world.any_process().receive::<usize>();
-                samples[sample_index] = self.extract_observable_from_sample(msg);
+                samples[sample_index] = msg;
             }
             sample_index += 1;
         }
 
-        for sample in &mut samples {
-            root_node.broadcast_into(&mut sample[..])
-        }
+        root_node.broadcast_into(&mut samples[..]);
         world.barrier();
 
         samples

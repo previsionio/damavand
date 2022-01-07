@@ -292,6 +292,9 @@ impl Circuit {
     /// ```
     pub fn forward(&mut self) {
         for gate_index in 0..self.gates.len() {
+            if self.observables.contains(&gate_index) {
+                continue;
+            }
             match self.apply_method {
                 utils::ApplyMethod::BruteForce => self.apply_brute_force(gate_index),
                 utils::ApplyMethod::Shuffle => self.apply_shuffle(gate_index),
@@ -376,7 +379,7 @@ impl Circuit {
     /// let num_samples = 1024
     /// circuit.sample(Some(num_sampes));
     /// ```
-    pub fn sample(&mut self, num_samples: Option<usize>) -> Vec<Vec<f64>> {
+    pub fn sample(&mut self, num_samples: Option<usize>) -> Vec<usize> {
         let num_samples = if num_samples.is_some() {
             num_samples.unwrap()
         } else {
@@ -405,14 +408,14 @@ impl Circuit {
         &mut self,
         num_samples: usize,
         node_probabilities: Vec<f64>,
-    ) -> Vec<Vec<f64>> {
+    ) -> Vec<usize> {
         let mut samples = vec![];
 
         for _ in 0..num_samples {
             let sample_index = utils::sample_from_discrete_distribution(&node_probabilities);
 
             if sample_index.is_some() {
-                samples.push(self.extract_observable_from_sample(sample_index.unwrap()));
+                samples.push(sample_index.unwrap());
             } else {
                 panic!("Could not sample from output distribution.");
             }
@@ -420,28 +423,32 @@ impl Circuit {
         samples
     }
 
-    /// Extract the value of observables from a sample.
+    /// Extract the expectation value of observables from samples
     ///
     /// # Arguments
-    /// `sample_index`: the sample index drawn from a probability distribution.
+    /// `samples`: samples drawn from calculation
     ///
     /// # Returns
-    /// `Vec<f64>`: a vector containing the values of the observables
-    pub fn extract_observable_from_sample(&self, sample: usize) -> Vec<f64> {
-        let mut samples = vec![];
-        for observable_index in self.observables.clone() {
-            let readout_qubit = self.gates[observable_index]
-                    .lock()
-                    .unwrap()
-                    .get_target_qubit();
-            let bit_value = (sample >> (self.num_qubits - 1 - readout_qubit)) & 1;
-            if bit_value > 0 {
-                samples.push(-1.);
-            } else {
-                samples.push(1.);
+    /// `Vec<Vec<f64>>`: a vector containing the expectation values of the observables
+    pub fn extract_expectation_values(&self, samples: Vec<usize>) -> Vec<Vec<f64>> {
+        let mut expectation_values = vec![];
+        for sample in &samples {
+            let mut observable_expectation_values = vec![];
+            for observable_index in self.observables.clone() {
+                let readout_qubit = self.gates[observable_index]
+                        .lock()
+                        .unwrap()
+                        .get_target_qubit();
+                let bit_value = (sample >> readout_qubit) & 1;
+                if bit_value > 0 {
+                    observable_expectation_values.push(-1.);
+                } else {
+                    observable_expectation_values.push(1.);
+                }
             }
+            expectation_values.push(observable_expectation_values);
         }
-        samples
+        expectation_values
     }
 
     /// Compute the gradient of one parameter gate by applying the parameter shift rule

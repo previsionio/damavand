@@ -138,14 +138,14 @@ __global__ void apply_one_qubit_gate_kernel_local(
     bool apply_gate = true;
 
     if(control_qubit >= 0)
-        apply_gate = (thread_id >> (num_qubits - 1 - control_qubit)) & 1;
+        apply_gate = (thread_id >> control_qubit) & 1;
 
     if(!apply_gate)
         return;
 
     int partner_id = compute_partner_thread_id(thread_id,
                      1,
-                     1 << (num_qubits - 1 - target_qubit));
+                     1 << target_qubit);
 
     cuDoubleComplex local_amplitude =
         make_cuDoubleComplex(device_local_amplitudes_real[thread_id],
@@ -193,14 +193,14 @@ __global__ void apply_one_qubit_gate_kernel_distributed(
     bool apply_gate = true;
 
     if(control_qubit >= 0)
-        apply_gate = (thread_id >> (num_qubits - 1 - control_qubit)) & 1;
+        apply_gate = (thread_id >> control_qubit) & 1;
 
     if(!apply_gate)
         return;
 
     int partner_id = compute_partner_thread_id(thread_id,
                      1,
-                     1 << (num_qubits - 1 - target_qubit));
+                     1 << target_qubit);
 
     cuDoubleComplex local_amplitude;
     cuDoubleComplex partner_amplitude;

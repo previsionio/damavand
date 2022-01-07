@@ -18,7 +18,7 @@ def run_circuit(num_qubits, num_layers, apply_method="brute_force"):
     
     circuit.forward()
     samples = circuit.sample()
-    return np.mean(samples, axis=0)
+    return np.mean(circuit.extract_expectation_values(samples), axis=0)
 
 apply_methods = ["distributed_gpu"]
 
