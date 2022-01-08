@@ -1,7 +1,7 @@
 ![damavand-main](figures/damavand_main.png)
 
 Damavand is a code that simulates quantum circuits.
-In order to learn more about damavand, refer to the [documentation](https://michelnowak1.github.io/damavand/).
+In order to learn more about damavand, refer to the [documentation](https://previsionio.github.io/damavand/).
 
 ## Development status
 
