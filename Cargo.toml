@@ -25,3 +25,4 @@ crate-type = ["cdylib"]
 
 [features]
 gpu=[]
+profiling=[]

@@ -34,7 +34,13 @@ impl Circuit {
                 amplitude_gap,
             );
 
+            #[cfg(feature = "profiling")]
+            self.start_profiling_inter_node_communications();
+
             self.exchange_amplitudes_between_nodes(partner_node_rank);
+
+            #[cfg(feature = "profiling")]
+            self.stop_profiling_inter_node_communications();
 
             self.apply_multithreading_distributed(gate_index, current_node_rank, partner_node_rank);
         }

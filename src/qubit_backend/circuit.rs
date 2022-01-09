@@ -6,6 +6,12 @@ extern crate libc;
 
 use crate::qubit_backend::gates;
 use crate::utils;
+
+#[cfg(feature = "profiling")]
+use crate::profiler::Profiler;
+#[cfg(feature = "profiling")]
+use crate::profiler::OperationType;
+
 use mpi::topology::SystemCommunicator;
 use mpi::traits::*;
 use ndarray::prelude::*;
@@ -13,6 +19,10 @@ use num::complex::Complex;
 use pyo3::prelude::*;
 use std::sync::{Arc, Mutex};
 use sysinfo::{System, SystemExt};
+
+
+#[cfg(feature = "profiling")]
+use std::collections::HashMap;
 
 #[cfg(feature = "gpu")]
 #[link(name = "damavand-gpu", kind = "static")]
@@ -60,6 +70,9 @@ pub struct Circuit {
     pub num_gpus_per_node: usize,
     pub num_amplitudes_per_gpu: usize,
     pub observables: Vec<usize>,
+
+    #[cfg(feature = "profiling")]
+    pub profilers: HashMap<OperationType, Profiler>,
 }
 
 #[pymethods]
@@ -214,6 +227,18 @@ impl Circuit {
             _ => {}
         };
 
+        #[cfg(feature = "profiling")]
+        let mut profilers = HashMap::new();
+        #[cfg(feature = "profiling")]
+        profilers.insert(OperationType::Forward, Profiler::new());
+        #[cfg(feature = "profiling")]
+        profilers.insert(OperationType::InterNodeCommunication, Profiler::new());
+        #[cfg(feature = "profiling")]
+        profilers.insert(OperationType::InterGPUCommunication, Profiler::new());
+        #[cfg(feature = "profiling")]
+        profilers.insert(OperationType::Sampling, Profiler::new());
+
+
         Circuit {
             num_qubits: num_qubits as usize,
             operations: Vec::<Array2<Complex<f64>>>::new(),
@@ -226,6 +251,10 @@ impl Circuit {
             num_gpus_per_node: num_gpus_available_per_node as usize,
             num_amplitudes_per_gpu: num_amplitudes_per_gpu,
             observables: vec![],
+
+            #[cfg(feature = "profiling")]
+            profilers: profilers,
+
         }
     }
 
@@ -291,6 +320,10 @@ impl Circuit {
     /// circuit.forward();
     /// ```
     pub fn forward(&mut self) {
+
+        #[cfg(feature = "profiling")]
+        self.start_profiling_forward();
+
         for gate_index in 0..self.gates.len() {
             if self.observables.contains(&gate_index) {
                 continue;
@@ -315,8 +348,11 @@ impl Circuit {
             }
         }
 
-        #[cfg(feature = "gpu")]
-        self.retrieve_amplitudes_on_host();
+        #[cfg(feature = "profiling")]
+        self.stop_profiling_forward();
+
+        // #[cfg(feature = "gpu")]
+        // self.retrieve_amplitudes_on_host();
     }
 
     /// Retrieves amplitudes on host when the computation was perfromed on GPUs.
@@ -325,9 +361,6 @@ impl Circuit {
     pub fn retrieve_amplitudes_on_host(&mut self) {
         match self.apply_method {
             utils::ApplyMethod::GPU | utils::ApplyMethod::DistributedGPU => {
-                if self.num_nodes > 1 {
-                    return;
-                }
                 let mut local_real = vec![0.; self.num_amplitudes_per_node];
                 let mut local_imag = vec![0.; self.num_amplitudes_per_node];
 
@@ -380,6 +413,10 @@ impl Circuit {
     /// circuit.sample(Some(num_sampes));
     /// ```
     pub fn sample(&mut self, num_samples: Option<usize>) -> Vec<usize> {
+
+        #[cfg(feature = "profiling")]
+        self.start_profiling_sampling();
+
         let num_samples = if num_samples.is_some() {
             num_samples.unwrap()
         } else {
@@ -387,13 +424,18 @@ impl Circuit {
         };
         let node_probabilities = self.measure();
 
-        if self.apply_method == utils::ApplyMethod::DistributedCPU
+        let samples = if self.apply_method == utils::ApplyMethod::DistributedCPU
             || self.apply_method == utils::ApplyMethod::DistributedGPU
         {
             self.sample_distributed(num_samples, node_probabilities)
         } else {
             self.sample_local(num_samples, node_probabilities)
-        }
+        };
+
+        #[cfg(feature = "profiling")]
+        self.stop_profiling_sampling();
+
+        samples
     }
 
     /// Sample the circuit when there is only one node.
@@ -519,10 +561,11 @@ impl Circuit {
                 probabilities[i] = self.local_amplitudes[i].norm_sqr();
             }
         }
-        // #[cfg(feature = "gpu")]
-        // unsafe {
-        //     print_timers();
-        // }
+        #[cfg(feature = "gpu")]
+        #[cfg(feature = "profiling")]
+        unsafe {
+            print_timers();
+        }
         probabilities
     }
 
@@ -634,6 +677,58 @@ impl Circuit {
         for operation in &self.operations {
             println!("{}", operation);
         }
+    }
+    #[cfg(feature = "profiling")]
+    pub fn print_profiling_results(&self) {
+
+        println!("profiling results");
+        println!("profiling Forward: iterations {} elapsed time {}",
+                 self.profilers.get(&OperationType::Forward).unwrap().iterations,
+                 self.get_mean_elapsed_forward());
+
+        println!("profiling InterNodeCommunications: iterations {} elapsed time {}",
+                 self.profilers.get(&OperationType::InterNodeCommunication).unwrap().iterations,
+                 self.get_mean_elapsed_inter_node_communications());
+
+        println!("profiling InterGPUCommunications: iterations {} elapsed time {}",
+                 self.profilers.get(&OperationType::InterGPUCommunication).unwrap().iterations,
+                 self.get_mean_elapsed_inter_gpu_communications());
+
+        println!("profiling Sampling: iterations {} elapsed time {}",
+                 self.profilers.get(&OperationType::Sampling).unwrap().iterations,
+                 self.get_mean_elapsed_sampling());
+    }
+
+    #[cfg(feature = "profiling")]
+    pub fn get_profiling_results_forward(&self) -> (usize, f64) {
+        (
+            self.profilers.get(&OperationType::Forward).unwrap().iterations,
+            self.get_mean_elapsed_forward()
+        )
+    }
+
+    #[cfg(feature = "profiling")]
+    pub fn get_profiling_results_inter_node_communications(&self) -> (usize, f64) {
+        (
+            self.profilers.get(&OperationType::InterNodeCommunication).unwrap().iterations,
+            self.get_mean_elapsed_inter_node_communications()
+        )
+    }
+
+    #[cfg(feature = "profiling")]
+    pub fn get_profiling_results_inter_gpu_communications(&self) -> (usize, f64) {
+        (
+            self.profilers.get(&OperationType::InterGPUCommunication).unwrap().iterations,
+            self.get_mean_elapsed_inter_gpu_communications()
+        )
+    }
+
+    #[cfg(feature = "profiling")]
+    pub fn get_profiling_results_sampling(&self) -> (usize, f64) {
+        (
+            self.profilers.get(&OperationType::Sampling).unwrap().iterations,
+            self.get_mean_elapsed_sampling()
+        )
     }
 }
 impl Circuit {

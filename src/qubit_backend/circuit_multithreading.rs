@@ -29,7 +29,6 @@ impl Circuit {
         drop(gate);
 
         let partner_amplitudes = self.local_amplitudes.clone();
-        let num_qubits = self.num_qubits;
 
         ndarray::Zip::indexed(&mut self.local_amplitudes).for_each(
             |amplitude_index, local_amplitude| {

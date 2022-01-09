@@ -14,3 +14,6 @@ pub mod circuit_distributed_cpu;
 pub mod circuit_distributed_gpu;
 #[cfg(feature = "gpu")]
 pub mod circuit_gpu;
+
+#[cfg(feature = "profiling")]
+pub mod circuit_profiling;

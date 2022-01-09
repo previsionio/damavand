@@ -28,6 +28,7 @@ extern "C" {
     fn exchange_amplitudes_between_gpus(
         current_gpu_rank: libc::c_int,
         partner_gpu_rank: libc::c_int,
+        num_amplitudes_per_gpu: libc::c_int,
     );
 }
 
@@ -64,12 +65,20 @@ impl Circuit {
                 );
 
                 if local_gpu_rank < partner_gpu_rank {
+
+                    #[cfg(feature = "profiling")]
+                    self.start_profiling_inter_gpu_communications();
+
                     unsafe {
                         exchange_amplitudes_between_gpus(
                             local_gpu_rank as i32,
                             partner_gpu_rank as i32,
+                            self.num_amplitudes_per_gpu as i32,
                         );
                     }
+
+                    #[cfg(feature = "profiling")]
+                    self.stop_profiling_inter_gpu_communications();
                 }
             }
 
@@ -97,7 +106,13 @@ impl Circuit {
 
                 self.retrieve_amplitudes_on_host();
 
+                #[cfg(feature = "profiling")]
+                self.start_profiling_inter_node_communications();
+
                 self.exchange_amplitudes_between_nodes(partner_gpu_rank);
+
+                #[cfg(feature = "profiling")]
+                self.stop_profiling_inter_node_communications();
 
                 // exchange amplitudes between nodes
                 unsafe {

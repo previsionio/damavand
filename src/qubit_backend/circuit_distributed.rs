@@ -5,15 +5,6 @@ use num::complex::Complex;
 use mpi::topology::SystemCommunicator;
 use mpi::traits::*;
 
-#[cfg(feature = "gpu")]
-#[link(name = "damavand-gpu", kind = "static")]
-extern "C" {
-
-    fn exchange_amplitudes_between_gpus(
-        current_gpu_rank: libc::c_int,
-        partner_gpu_rank: libc::c_int,
-    );
-}
 
 impl Circuit {
     /// Exchanges amplitudes between current and partner node
@@ -47,29 +38,12 @@ impl Circuit {
             .collect();
     }
 
-    /// Exchanges amplitudes between two partner gpus on the same node
-    ///
-    /// # Attributes
-    /// * `current_node_rank` rank of node treated by current process
-    /// * `partner_node_rank` rank of node treated by partner process
-    #[cfg(feature = "gpu")]
-    pub fn exchange_amplitudes_between_gpus(
-        &mut self,
-        current_gpu_rank: usize,
-        partner_gpu_rank: usize,
-    ) {
-        unsafe {
-            exchange_amplitudes_between_gpus(current_gpu_rank as i32, partner_gpu_rank as i32);
-        }
-    }
-
     /// 
     pub fn sample_distributed(
         &mut self,
         num_samples: usize,
         node_probabilities: Vec<f64>,
     ) -> Vec<usize> {
-        let num_observables = self.observables.len();
         let mut samples = vec![0_usize; num_samples];
 
         let world = SystemCommunicator::world();

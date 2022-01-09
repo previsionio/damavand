@@ -1,6 +1,3 @@
-#![doc(html_logo_url = "../../../figures/damavand_rust_doc_logo.png")]
-
-//! ![Damavand Frontpage][frontpage]
 //! # Damavand
 //!
 //! `damavand` is an HPC quantum circuit simulator.
@@ -8,6 +5,9 @@
 
 pub mod qubit_backend;
 pub mod utils;
+
+#[cfg(feature = "profiling")]
+pub mod profiler;
 
 use pyo3::prelude::*;
 use pyo3::wrap_pyfunction;
