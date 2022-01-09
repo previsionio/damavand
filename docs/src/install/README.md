@@ -170,3 +170,9 @@ cd ..
 zip -r damavand.zip damavand/
 scp -r damavand.zip <user>@<supercomputer>:<path_to_working_directory>
 ```
+You will be able to unzip your package and run the installation
+```bash
+unzip damavand.zip
+cd damavand/
+CARGO_HOME=$PWD/cargo python3 setup.py install --user
+```
