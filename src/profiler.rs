@@ -1,7 +1,5 @@
 
 use std::time::Instant;
-use mpi::topology::SystemCommunicator;
-use mpi::traits::*;
 
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub enum OperationType {
@@ -27,12 +25,10 @@ impl Profiler {
     }
 
     pub fn start(&mut self){
-        SystemCommunicator::world().barrier();
         self.instant = Instant::now();
     }
 
     pub fn stop(&mut self){
-        SystemCommunicator::world().barrier();
         self.cumulated_elapsed += self.instant.elapsed().as_millis() as f64;
         self.iterations += 1;
     }
