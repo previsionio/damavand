@@ -167,5 +167,6 @@ cd damavand/
 mkdir cargo
 CARGO_HOME=$PWD/cargo cargo fetch
 cd ..
-scp -R damavand/ <user>@<supercomputer>:<path_to_working_directory>
+zip -r damavand.zip damavand/
+scp -r damavand.zip <user>@<supercomputer>:<path_to_working_directory>
 ```
