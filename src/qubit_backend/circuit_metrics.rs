@@ -46,21 +46,48 @@ impl Circuit {
 
         let current_node_rank = world.rank();
 
-        let local_fidelity = state_2.dot(&state_1.mapv(|a| a.conj()))
+        let local_fidelity = state_2.dot(&state_1.mapv(|a| a.conj()));
+        let local_fidelity_real = local_fidelity.re;
+        let local_fidelity_imaginary = local_fidelity.im;
 
-        let mut local_fidelities = vec![0_f64; num_nodes];
-
-        let mut fidelity: f64 = 0.;
+        let mut local_fidelities_real = vec![0_f64; num_nodes];
+        let mut local_fidelities_imaginary = vec![0_f64; num_nodes];
 
         if current_node_rank == root_node_rank {
-            root_node.gather_into_root(&local_fidelity, &mut local_fidelities[..]);
-            fidelity = local_fidelities.iter().sum();
+            root_node.gather_into_root(
+                &local_fidelity_real,
+                &mut local_fidelities_real[..]);
         } else {
-            root_node.gather_into(&local_fidelity);
+            root_node.gather_into(&local_fidelity_real);
         }
+
+        if current_node_rank == root_node_rank {
+            root_node.gather_into_root(
+                &local_fidelity_imaginary,
+                &mut local_fidelities_imaginary[..]);
+        } else {
+            root_node.gather_into(&local_fidelity_imaginary);
+        }
+
+
+        let fidelity_helper = if current_node_rank == root_node_rank {
+            let mut fidelity_helper = Complex::<f64>{re: 0., im: 0.};
+            for i in 0..num_nodes {
+                fidelity_helper += Complex::<f64>{
+                    re: local_fidelities_real[i],
+                    im: local_fidelities_imaginary[i]
+                };
+            }
+            fidelity_helper
+        } else {
+            Complex::<f64>{re: 0., im: 0.}
+        };
+
+        let mut fidelity = fidelity_helper.norm_sqr();
 
         root_node.broadcast_into(&mut fidelity);
 
-        fidelity.norm_sqr()
+        fidelity
+
     }
 }
