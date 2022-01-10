@@ -259,7 +259,7 @@ impl Circuit {
     }
 
     /// Resets the quantum state to zero state
-    pub fn reset(&mut self) {
+    pub fn reset_amplitudes(&mut self) {
         self.local_amplitudes =
             Array1::<Complex<f64>>::zeros((1 << self.num_qubits) / self.num_nodes);
         if SystemCommunicator::world().rank() == 0 {
@@ -299,6 +299,9 @@ impl Circuit {
                 };
             }
         }
+    }
+    pub fn reset(&mut self) {
+        self.reset_amplitudes();
         self.gates = vec![];
     }
 
@@ -752,12 +755,12 @@ impl Circuit {
         parameters_1: Vec<f64>,
         parameters_2: Vec<f64>
     ) -> f64 {
-        self.reset();
+        self.reset_amplitudes();
         self.set_parameters(parameters_1);
         self.forward();
         let state_1 = self.local_amplitudes.clone();
 
-        self.reset();
+        self.reset_amplitudes();
         self.set_parameters(parameters_2);
         self.forward();
         let state_2 = self.local_amplitudes.clone();

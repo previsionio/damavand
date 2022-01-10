@@ -20,7 +20,7 @@ impl Circuit {
             ApplyMethod::Shuffle |
             ApplyMethod::Multithreading |
             ApplyMethod::GPU => {
-                state_2.dot(&state_1.mapv(|a| a.conj())).norm_sqr()
+                state_1.mapv(|a| a.conj()).dot(&state_2).norm_sqr()
             },
             ApplyMethod::DistributedCPU |
             ApplyMethod::DistributedGPU => {
@@ -46,7 +46,7 @@ impl Circuit {
 
         let current_node_rank = world.rank();
 
-        let local_fidelity = state_2.dot(&state_1.mapv(|a| a.conj()));
+        let local_fidelity = state_1.mapv(|a| a.conj()).dot(&state_2);
         let local_fidelity_real = local_fidelity.re;
         let local_fidelity_imaginary = local_fidelity.im;
 
