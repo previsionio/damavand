@@ -302,6 +302,22 @@ impl Circuit {
         self.gates = vec![];
     }
 
+    pub fn set_parameters(&mut self, parameters: Vec<f64>) {
+
+        let mut parametrized_gates: Vec<usize> = vec![];
+        for gate_index in 0..self.gates.len() {
+            let gate = self.gates[gate_index].lock().unwrap();
+            if gate.get_parameter().is_some(){
+                parametrized_gates.push(gate_index);
+            }
+        }
+
+        for (gate_index, parameter) in parametrized_gates.into_iter().zip(&parameters) {
+            let mut gate = self.gates[gate_index].lock().unwrap();
+            gate.set_parameter(*parameter);
+        }
+    }
+
     /// Forward method: implements a forward pass of a quantum state through a quantum circuit
     /// until measurment.
     ///
@@ -351,8 +367,8 @@ impl Circuit {
         #[cfg(feature = "profiling")]
         self.stop_profiling_forward();
 
-        // #[cfg(feature = "gpu")]
-        // self.retrieve_amplitudes_on_host();
+        #[cfg(feature = "gpu")]
+        self.retrieve_amplitudes_on_host();
     }
 
     /// Retrieves amplitudes on host when the computation was perfromed on GPUs.
@@ -729,6 +745,24 @@ impl Circuit {
             self.profilers.get(&OperationType::Sampling).unwrap().iterations,
             self.get_mean_elapsed_sampling()
         )
+    }
+
+    pub fn get_fidelity_between_two_states_with_parameters(
+        &mut self,
+        parameters_1: Vec<f64>,
+        parameters_2: Vec<f64>
+    ) -> f64 {
+        self.reset();
+        self.set_parameters(parameters_1);
+        self.forward();
+        let state_1 = self.local_amplitudes.clone();
+
+        self.reset();
+        self.set_parameters(parameters_2);
+        self.forward();
+        let state_2 = self.local_amplitudes.clone();
+
+        self.get_fidelity(state_1, state_2)
     }
 }
 impl Circuit {

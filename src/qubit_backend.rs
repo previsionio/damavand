@@ -9,6 +9,7 @@ pub mod circuit_multithreading;
 
 pub mod circuit_distributed;
 pub mod circuit_distributed_cpu;
+pub mod circuit_metrics;
 
 #[cfg(feature = "gpu")]
 pub mod circuit_distributed_gpu;
