@@ -1,5 +1,4 @@
 import time
-from tqdm import tqdm
 import numpy as np
 from damavand import Circuit
 from mpi4py import MPI

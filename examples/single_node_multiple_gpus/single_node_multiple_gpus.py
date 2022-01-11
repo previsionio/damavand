@@ -1,9 +1,7 @@
-from damavand.utils import initialize_mpi
 import time
-from tqdm import tqdm
-initialize_mpi()
 import numpy as np
-from damavand.qubit_backend.circuit import Circuit
+from damavand import Circuit
+from mpi4py import MPI
 
 
 def run_circuit(num_qubits, num_layers, apply_method="brute_force"):
