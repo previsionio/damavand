@@ -91,9 +91,9 @@ extern "C" void print_timers()
         measure_average_time += get_measure_kernel_elapsed_time();
         copy_device_to_host_time += get_copy_device_to_host_elapsed_time();
 
-        // printf("initoccupancy %f\n", init_potential_occupancy);
-        // printf("apply occupancy %f\n", apply_potential_occupancy);
-        // printf("measure occupancy %f\n", measure_potential_occupancy);
+        printf("gpu id %d initoccupancy %f\n", gpu_id, init_potential_occupancy);
+        printf("gpu id %d apply occupancy %f\n", gpu_id, apply_potential_occupancy);
+        printf("gpu id %d measure occupancy %f\n", gpu_id, measure_potential_occupancy);
     }
 
     printf("init %f\n", init_average_time / num_gpus_per_node_used);
@@ -200,6 +200,10 @@ extern "C" void init_quantum_state(
 extern "C" void sequential_measure_on_gpu(int num_amplitudes_per_gpu, double *probabilities)
 {
 
+    #ifdef HAS_PROFILER
+        sdkStartTimer(&copy_device_to_host_timer);
+    #endif
+
     #pragma omp parallel for num_threads(num_gpus_per_node_used)
     for(int gpu_id = 0; gpu_id < num_gpus_per_node_used; gpu_id++)
     {
@@ -217,17 +221,12 @@ extern "C" void sequential_measure_on_gpu(int num_amplitudes_per_gpu, double *pr
         checkCudaErrors(cudaMallocHost((void **) &host_probabilities,
                                        sizeof(double) * num_amplitudes_per_gpu));
 
-        #ifdef HAS_PROFILER
-            sdkStartTimer(&copy_device_to_host_timer);
-        #endif
-
         // run measure kernel
         local_amplitudes[gpu_id].measure(
             num_amplitudes_per_gpu,
             0,
             device_probabilities,
             stream);
-
 
         checkCudaErrors(cudaMemcpy(host_probabilities,
                                    device_probabilities,
@@ -236,9 +235,6 @@ extern "C" void sequential_measure_on_gpu(int num_amplitudes_per_gpu, double *pr
 
         checkCudaErrors(cudaDeviceSynchronize());
 
-        #ifdef HAS_PROFILER
-            sdkStopTimer(&copy_device_to_host_timer);
-        #endif
 
         for(int amplitude_id_on_gpu = 0;
                 amplitude_id_on_gpu < num_amplitudes_per_gpu;
@@ -249,10 +245,18 @@ extern "C" void sequential_measure_on_gpu(int num_amplitudes_per_gpu, double *pr
 
         checkCudaErrors(cudaDeviceReset());
     }
+
+    #ifdef HAS_PROFILER
+        sdkStopTimer(&copy_device_to_host_timer);
+    #endif
 }
 
 extern "C" void concurrent_measure_on_gpu(int num_amplitudes_per_gpu, double *probabilities)
 {
+
+    #ifdef HAS_PROFILER
+        sdkStartTimer(&copy_device_to_host_timer);
+    #endif
 
     #pragma omp parallel for num_threads(num_gpus_per_node_used)
     for(int gpu_id = 0; gpu_id < num_gpus_per_node_used; gpu_id++)
@@ -281,10 +285,6 @@ extern "C" void concurrent_measure_on_gpu(int num_amplitudes_per_gpu, double *pr
             checkCudaErrors(cudaStreamCreate(&streams[stream_id]));
         }
 
-        #ifdef HAS_PROFILER
-            sdkStartTimer(&copy_device_to_host_timer);
-        #endif
-
         // loop on all streams
         for (int stream_id = 0; stream_id < num_streams; ++stream_id) {
 
@@ -310,10 +310,6 @@ extern "C" void concurrent_measure_on_gpu(int num_amplitudes_per_gpu, double *pr
             checkCudaErrors(cudaStreamSynchronize(streams[stream_id]));
         }
 
-        #ifdef HAS_PROFILER
-            sdkStopTimer(&copy_device_to_host_timer);
-        #endif
-
         for (int stream_id = 0; stream_id < num_streams; ++stream_id) {
             checkCudaErrors(cudaStreamDestroy(streams[stream_id]));
         }
@@ -325,6 +321,10 @@ extern "C" void concurrent_measure_on_gpu(int num_amplitudes_per_gpu, double *pr
 
         checkCudaErrors(cudaDeviceReset());
     }
+    #ifdef HAS_PROFILER
+        sdkStopTimer(&copy_device_to_host_timer);
+    #endif
+
 }
 
 extern "C" void measure_on_gpu(int num_amplitudes_per_gpu, double *probabilities)
@@ -404,6 +404,10 @@ extern "C" void split_amplitudes_between_gpus(
     double *partner_amplitudes_real,
     double *partner_amplitudes_imaginary)
 {
+    #ifdef HAS_PROFILER
+        sdkStartTimer(&copy_host_to_device_timer);
+    #endif
+
     #pragma omp parallel for num_threads(num_gpus_per_node_used)
     for(int gpu_id = 0; gpu_id < num_gpus_per_node_used; gpu_id++)
     {
@@ -412,9 +416,6 @@ extern "C" void split_amplitudes_between_gpus(
         int
         start_index = gpu_id * num_amplitudes_per_gpu;
 
-        #ifdef HAS_PROFILER
-            sdkStartTimer(&copy_host_to_device_timer);
-        #endif
 
         checkCudaErrors(cudaMemcpy(
                             local_amplitudes[gpu_id].real_parts,
@@ -439,10 +440,11 @@ extern "C" void split_amplitudes_between_gpus(
                             &partner_amplitudes_imaginary[start_index],
                             sizeof(double) * num_amplitudes_per_gpu,
                             cudaMemcpyHostToDevice));
-        #ifdef HAS_PROFILER
-            sdkStopTimer(&copy_host_to_device_timer);
-        #endif
     }
+
+    #ifdef HAS_PROFILER
+        sdkStopTimer(&copy_host_to_device_timer);
+    #endif
 }
 
 extern "C" void retrieve_amplitudes_on_host(
@@ -450,6 +452,10 @@ extern "C" void retrieve_amplitudes_on_host(
     double *local_amplitudes_real,
     double *local_amplitudes_imaginary)
 {
+    #ifdef HAS_PROFILER
+        sdkStartTimer(&copy_device_to_host_timer);
+    #endif
+
     #pragma omp parallel for num_threads(num_gpus_per_node_used)
     for(int gpu_id = 0; gpu_id < num_gpus_per_node_used; gpu_id++)
     {
@@ -457,9 +463,6 @@ extern "C" void retrieve_amplitudes_on_host(
 
         int start_index = gpu_id * num_amplitudes_per_gpu;
 
-        #ifdef HAS_PROFILER
-            sdkStartTimer(&copy_device_to_host_timer);
-        #endif
 
         checkCudaErrors(cudaMemcpy(
                             &local_amplitudes_real[start_index],
@@ -472,9 +475,8 @@ extern "C" void retrieve_amplitudes_on_host(
                             local_amplitudes[gpu_id].imaginary_parts,
                             sizeof(double) * num_amplitudes_per_gpu,
                             cudaMemcpyDeviceToHost));
-
-        #ifdef HAS_PROFILER
-            sdkStopTimer(&copy_device_to_host_timer);
-        #endif
     }
+    #ifdef HAS_PROFILER
+        sdkStopTimer(&copy_device_to_host_timer);
+    #endif
 }
