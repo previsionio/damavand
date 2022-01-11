@@ -30,7 +30,7 @@ impl Circuit {
 
         let partner_amplitudes = self.local_amplitudes.clone();
 
-        ndarray::Zip::indexed(&mut self.local_amplitudes).for_each(
+        ndarray::Zip::indexed(&mut self.local_amplitudes).par_for_each(
             |amplitude_index, local_amplitude| {
                 let apply_gate = if control_qubit.is_some() {
                     (amplitude_index >> control_qubit.unwrap()) & 1
