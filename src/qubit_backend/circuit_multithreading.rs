@@ -41,13 +41,12 @@ impl Circuit {
                     Circuit::compute_partner_rank(amplitude_index, 1, 1 << target_qubit);
 
                 if apply_gate == 1_usize {
-                    let lower_amplitude = local_amplitude.clone();
                     let upper_amplitude = partner_amplitudes[partner_amplitude_index].clone();
 
                     if partner_amplitude_index > amplitude_index {
-                        *local_amplitude = lower_amplitude * gm_00 + upper_amplitude * gm_01;
+                        *local_amplitude = *local_amplitude * gm_00 + upper_amplitude * gm_01;
                     } else {
-                        *local_amplitude = upper_amplitude * gm_10 + lower_amplitude * gm_11;
+                        *local_amplitude = upper_amplitude * gm_10 + *local_amplitude * gm_11;
                     }
                 }
             },

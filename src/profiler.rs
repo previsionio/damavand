@@ -29,7 +29,7 @@ impl Profiler {
     }
 
     pub fn stop(&mut self){
-        self.cumulated_elapsed += self.instant.elapsed().as_millis() as f64;
+        self.cumulated_elapsed += self.instant.elapsed().as_nanos() as f64;
         self.iterations += 1;
     }
     
